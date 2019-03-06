@@ -53,7 +53,7 @@ element =FindLinearVelocity(element, omega)
 function element=LiftAndDragForces(element)
 
 j=1;
-rho=
+rho=1.25; %density of air
 for i=1:length(element(j).linear_vel
     C_L=0.225+1.58*sin(2.13*alpha-7.28*pi/180);
     C_D=1.92-1.55*cos(2.04*alpha-9.82*pi/180);
