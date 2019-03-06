@@ -54,9 +54,9 @@ function element=LiftAndDragForces(element)
 
 j=1;
 rho=1.25; %density of air
-for i=1:length(element(j).linear_vel
-    C_L=0.225+1.58*sin(2.13*alpha-7.28*pi/180);
-    C_D=1.92-1.55*cos(2.04*alpha-9.82*pi/180);
+for i=1:length(element(j).linear_vel)
+    C_L=0.225+1.58*sind(2.13*beta_f(i)-7.28);
+    C_D=1.92-1.55*cosd(2.04*befa_f(i)-9.82);
 end
 
 end
