@@ -9,11 +9,14 @@ digits(4); % sets decimal point accuracy
 load('AnglesInter.mat') %loads previously generated data
 %% variables
 test=0; %plots the test graphs in the code. useful for debugging
-c=0.6/1000; %turns chrod length to m
+
 
 n=10; %number of wing elements
 global time
-global wing_length
+global wing_length rho
+rho=1.255;
+global c
+c=0.6/1000; %turns chrod length to m
 time=xx/220;
 wing_length=2/1000;
 %% Extracts wings angles from data
@@ -44,27 +47,38 @@ title('Angular velocity of a wing with respect to a nonmoving frame at the base 
 element=FindDistanceOfCOP(phi_f,psi_f,beta_f,n,c,R_inv);
 
 %% find linear velocity of each element for each time step
-element =FindLinearVelocity(element, beta_f,wing_length/r)
+element =FindLinearVelocity(element, omega);
 
 %% find the forces acting on each blade element
-
+LiftAndDragForces(element,beta_f,del_r);
 %% Functions---------------------------------------------------------------
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
+function element =FindAddedMassForce(element,beta_dotf,beta_f)
+j=1;
+end
 function element=LiftAndDragForces(element,beta_f,del_r)
-
+%this function will find only the magnitude not the direction
 
 j=1;
-rho=1.25; %density of air
+global rho
 for i=1:length(element(j).linear_vel)
     C_L=0.225+1.58*sind(2.13*beta_f(i)-7.28);
     C_D=1.92-1.55*cosd(2.04*befa_f(i)-9.82);
     element(j).force_Drag(i)=0.5*rho*norm(element(j).V_linear(i))^2*C_D*del_r;
-     element(j).force_Lift(i)=0.5*rho*norm(element(j).V_linear(i))^2*C_L*del_r;
+    element(j).force_Lift(i)=0.5*rho*norm(element(j).V_linear(i))^2*C_L*del_r;
+end
 end
 
+function element=FindRotationalForce(element,beta_dotf,del_r)
+j=1;
+cr=1.55;
+global rho
+global c
+for i=1:length(element(j).V_linear)
+    element(j).Rot_Force(i)=cr*rho*del_r*norm(element(j).V_linear(i))*c^2*beta_dotf(i);
 end
-
+end
 function element=FindLinearVelocity(element, omega)
 %finds the linear velocity of each element throughout a full wing stroke
 j=1;
