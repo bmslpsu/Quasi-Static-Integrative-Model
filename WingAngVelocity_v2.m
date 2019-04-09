@@ -49,9 +49,12 @@ element=FindDistanceOfCOP(phi_f,psi_f,beta_f,n,c,R_inv);
 %% find linear velocity of each element for each time step
 element =FindLinearVelocity(element, omega);
 
-%% find the forces acting on each blade element
+%% find the lift and drag forces acting on each blade element
 del_r=wing_length/n;
 element =LiftAndDragForces(element,beta_f,del_r);
+
+%%  Find the added mass force acting on each wing
+    
 %% Functions---------------------------------------------------------------
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
@@ -90,7 +93,7 @@ function element=FindLinearVelocity(element, omega)
 j=1;
 disp('calculating the linear velocity for each element')
 for i=1:length(omega)
-    V_linear(1:3,i)=cross(omega(1:3,i)*180/pi,element(j).location_cop(1:3,i));
+    V_linear(1:3,i)=cross(omega(1:3,i)*pi/180,element(j).location_cop(1:3,i));
     V_linear_Norm(i)=norm(V_linear(1:3,i));
 end
 element(j).linear_vel=V_linear;
@@ -211,13 +214,15 @@ end
 
 function [omega, omega_mag,omega_rad]  =GetWingAngVel(ex1,ey1,ez1,phi,psi,beta,phi_dotf,psi_dotf,beta_dotf)
 %% angular velocity in vector form
+% omega (deg)
+% omega_mag(deg)
+%omega_rad (rad)
 disp('Calculating the angular velocity in vector form')
 for i=1:length(phi_dotf)
     beta1=beta(i);
     phi1=phi(i);
     psi1=psi(i);
     omega(1:3,i)=phi_dotf(i)*vpa(subs(ey1))+psi_dotf(i)*vpa(subs(ez1))+beta_dotf(i)*vpa(subs(ex1));
-    i
 end
 disp('done with vector ang vel')
 %% Magnitude of ang vel in deg/s
