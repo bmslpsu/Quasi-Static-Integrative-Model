@@ -68,7 +68,7 @@ FindAddedMass(element,beta_dotf,beta_f,del_r,c,time)
 function element=FindAddedMass(element,beta_dotf,beta_f,del_r,c,time)
 global rho
 j=1;
-linear_acc=diff(element(j).linear_vel_norm)/(time(2)-time(1));
+linear_acc=diff(
 for i=1:length(element(j).linear_vel_norm)
     part1=rho*pi*c^2/4*del_r;
     part2=(element(j).linear_vel(:,i)*linear_acc(i)*sind(beta_f(i)))/element(j).linear_vel_norm(i);
