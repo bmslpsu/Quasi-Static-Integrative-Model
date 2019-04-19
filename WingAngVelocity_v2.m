@@ -30,6 +30,12 @@ wing_length=2/1000; % winglength in meters
 ex=[1;0;0];
 ey=[0;1;0];
 ez=[0;0;1];
+%% Rotational Force direction with respect to wing
+ey_Rotational_wing=sind(psi_f+90);
+ex_Rotational_wing=cosd(psi_f+90);
+%% Added Mass force
+ey_AddedMass_wing=sind(psi_f+90);
+ex_AddedMass_wing=cosd(psi_f+90);
 %% Euler Rotation
 R_inv=EulerRotation();
 
@@ -37,8 +43,6 @@ R_inv=EulerRotation();
 ex1=R_inv*ex;
 ey1=R_inv*ey;
 ez1=R_inv*ez;
-
-
 %% find angular velocity of wing with respect to stationary frame
 [omega, omega_mag,omega_rad]  =GetWingAngVel(ex1,ey1,ez1,phi,psi,beta,phi_dotf,psi_dotf,beta_dotf);
 figure
@@ -53,7 +57,7 @@ element =FindLinearVelocity(element, omega);
 
 %% find the lift and drag forces acting on each blade element
 del_r=wing_length/n;
-element =LiftAndDragForces(element,beta_f,del_r);
+element =LiftAndDragForces(element,phi_f,del_r);
 
 %%  Find the added mass force acting on each wing
 % note: the input anglur velocity is in deg/s. it is converted to rad/s in
@@ -61,22 +65,50 @@ element =LiftAndDragForces(element,beta_f,del_r);
 element1=FindRotationalForce(element,beta_dotf,del_r,c);
 
 %% Added mass force
-FindAddedMass(element,beta_dotf,beta_f,del_r,c,time)
+element2=FindAddedMass(element1,beta_dotf,beta_f,del_r,c,time);
+
+%% find force directions
+FindForceVectors(element2,R_inv)
 %% Functions---------------------------------------------------------------
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
+function element=FindForceVectors(element,R_inv,ey1,ex1)
+%lift and drag are assumed vertical and horizontal
+
+j=1;
+f_lift_vec=element(j).force_Lift*ey1*R_inv;
+    
+
+%added mass is assumed to be perpnedicular to the surface of the wing
+end
+
 function element=FindAddedMass(element,beta_dotf,beta_f,del_r,c,time)
 global rho
 j=1;
-linear_acc=diff(element(j).linear_vel_norm)/(time(2)-time(1));
-for i=1:length(element(j).linear_vel_norm)
+disp(['Calcualting added mass force for element ' num2str(j)])
+linear_acc=diff(eval(element(j).linear_vel)')'/(time(2)-time(1));
+[b, a] = butter(4, 20.5/(250/2),'low');
+linear_acc_filt1=filtfilt(b, a, linear_acc(1,:));
+linear_acc_filt2=filtfilt(b, a, linear_acc(2,:));
+linear_acc_filt3=filtfilt(b, a, linear_acc(3,:));
+plot(linear_acc(1,:))
+hold on
+plot(linear_acc_filt1)
+linear_acc_filt=[linear_acc_filt1; linear_acc_filt2;linear_acc_filt3];
+%issue with lengths: when using the derivative, the length of the new array
+%is one element smaller. In order to continue with the analysis, the larger
+%elements must be cropped to match the same size
+for i=1:length(linear_acc_filt1)
     part1=rho*pi*c^2/4*del_r;
-    part2=(element(j).linear_vel(:,i)*linear_acc(i)*sind(beta_f(i)))/element(j).linear_vel_norm(i);
-    part3=element(j).linear_vel_norm(i)*beta_dotf(i)*cosd(beta(i));
-    
+    part2=(dot(element(j).linear_vel(:,i),linear_acc_filt(:,i))*sind(beta_f(i)))/element(j).linear_vel_norm(i);
+    part3=eval(element(j).linear_vel_norm(i)*beta_dotf(i)*cosd(beta_f(i)));
+    f_addedMass(i)=part1*(part2+part3);
+end
+disp(['Done calculating added mass force for element' num2str(j)])
+beep
+element(j).force_AddedMass=f_addedMass;
 end
 
-end
 function element =FindRotationalForce(element,beta_dotf,del_r,c)
 %del_r (m)
 %c (m)
@@ -97,25 +129,27 @@ end
 element(j).force_Rotation=F_rot;
 end
 
-function element=LiftAndDragForces(element,beta_f,del_r)
+function element=LiftAndDragForces(element,phi_f,del_r)
 %this function will find only the magnitude not the direction
 
-j=1;
+for j=1:length(element)
 global rho
 
 disp('calculating force for one element')
 for i=1:length(element(j).linear_vel)
-    C_L=0.225+1.58*sind(2.13*beta_f(i)-7.28);
-    C_D=1.92-1.55*cosd(2.04*beta_f(i)-9.82);
+    C_L=0.225+1.58*sind(2.13*phi_f(i)-7.28);
+    C_D=1.92-1.55*cosd(2.04*phi_f(i)-9.82);
     element(j).force_Drag(i)=0.5*rho*norm(element(j).linear_vel(:,i))^2*C_D*del_r;
     element(j).force_Lift(i)=0.5*rho*norm(element(j).linear_vel(:,i))^2*C_L*del_r;
 end
 disp(['Finished force for element' num2str(j)])
 end
+disp('Done for entire wing')
+end
 
 function element=FindLinearVelocity(element, omega)
 %finds the linear velocity of each element throughout a full wing stroke
-j=1;
+for j=1:length(element)
 disp(['calculating the linear velocity for element' num2str(j)])
 for i=1:length(omega)
     V_linear(1:3,i)=cross(omega(1:3,i)*pi/180,element(j).location_cop(1:3,i));
@@ -124,6 +158,7 @@ end
 element(j).linear_vel=V_linear;
 element(j).linear_vel_norm=V_linear_Norm;
 disp(['done calculating linear velocity for element' num2str(j)])
+end
 end
 
 function element=FindDistanceOfCOP(phi_f,psi_f,beta_f,n,c,R_inv)
@@ -135,7 +170,7 @@ x_cp=c*(0.82*abs(psi_f*pi/180)/pi+0.05); %location of center of pressure in x-ax
 delz=wing_length/n;
 
 %% finds the distance vector to each center of pressure for a each element
-for j=1:1%n
+for j=1:n
     disp(['Finding COP for element' num2str(j)])
     for i=1:length(x_cp)-1
         r_cpp(1:3,i)=[-x_cp(i); 0; delz*j];

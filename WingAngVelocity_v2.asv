@@ -30,6 +30,15 @@ wing_length=2/1000; % winglength in meters
 ex=[1;0;0];
 ey=[0;1;0];
 ez=[0;0;1];
+%% lift and drag force directions
+Lift_direction=ey1;
+Drag_direction=ex1;
+%% Rotational Force direction with respect to wing
+ey_Rotational_wing=sind(psi_f+90);
+ex_Rotational_wing=cosd(psi_f+90);
+%% Added Mass force
+ey_AddedMass_wing=sind(psi_f+90);
+ex_AddedMass_wing=cosd(psi_f+90);
 %% Euler Rotation
 R_inv=EulerRotation();
 
@@ -37,8 +46,6 @@ R_inv=EulerRotation();
 ex1=R_inv*ex;
 ey1=R_inv*ey;
 ez1=R_inv*ez;
-
-
 %% find angular velocity of wing with respect to stationary frame
 [omega, omega_mag,omega_rad]  =GetWingAngVel(ex1,ey1,ez1,phi,psi,beta,phi_dotf,psi_dotf,beta_dotf);
 figure
@@ -61,22 +68,51 @@ element =LiftAndDragForces(element,beta_f,del_r);
 element1=FindRotationalForce(element,beta_dotf,del_r,c);
 
 %% Added mass force
-FindAddedMass(element,beta_dotf,beta_f,del_r,c,time)
+element2=FindAddedMass(element1,beta_dotf,beta_f,del_r,c,time);
+
+%% find force directions
+FindForceVectors(element2,R_inv)
 %% Functions---------------------------------------------------------------
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
+function element=FindForceVectors(element,R_inv)
+%lift and drag are assumed vertical and horizontal
+Lift_direction=ey1;
+Drag_direction=ex1;
+j=1;
+    f_lift_vec=element(j).
+    
+
+%added mass is assumed to be perpnedicular to the surface of the wing
+end
+
 function element=FindAddedMass(element,beta_dotf,beta_f,del_r,c,time)
 global rho
 j=1;
-linear_acc=diff(
-for i=1:length(element(j).linear_vel_norm)
+disp(['Calcualting added mass force for element ' num2str(j)])
+linear_acc=diff(eval(element(j).linear_vel)')'/(time(2)-time(1));
+[b, a] = butter(4, 20.5/(250/2),'low');
+linear_acc_filt1=filtfilt(b, a, linear_acc(1,:));
+linear_acc_filt2=filtfilt(b, a, linear_acc(2,:));
+linear_acc_filt3=filtfilt(b, a, linear_acc(3,:));
+plot(linear_acc(1,:))
+hold on
+plot(linear_acc_filt1)
+linear_acc_filt=[linear_acc_filt1; linear_acc_filt2;linear_acc_filt3];
+%issue with lengths: when using the derivative, the length of the new array
+%is one element smaller. In order to continue with the analysis, the larger
+%elements must be cropped to match the same size
+for i=1:length(linear_acc_filt1)
     part1=rho*pi*c^2/4*del_r;
-    part2=(element(j).linear_vel(:,i)*linear_acc(i)*sind(beta_f(i)))/element(j).linear_vel_norm(i);
-    part3=element(j).linear_vel_norm(i)*beta_dotf(i)*cosd(beta(i));
-    
+    part2=(dot(element(j).linear_vel(:,i),linear_acc_filt(:,i))*sind(beta_f(i)))/element(j).linear_vel_norm(i);
+    part3=eval(element(j).linear_vel_norm(i)*beta_dotf(i)*cosd(beta_f(i)));
+    f_addedMass(i)=part1*(part2+part3);
+end
+disp(['Done calculating added mass force for element' num2str(j)])
+beep
+element(j).force_AddedMass=f_addedMass;
 end
 
-end
 function element =FindRotationalForce(element,beta_dotf,del_r,c)
 %del_r (m)
 %c (m)
