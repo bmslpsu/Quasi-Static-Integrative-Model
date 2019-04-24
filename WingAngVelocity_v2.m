@@ -179,7 +179,7 @@ for j=1:n
         psi1=psi_f(i);
         r_cp(1:3,i)=vpa(subs(R_inv*r_cpp(1:3,i)));
         if i==floor(length(x_cp)/2)
-            disp(['COP distance calculation for element ' num2str(j) 'is half done'])
+            disp(['COP distance calculation for element ' num2str(j) ' is half done'])
         end
     end
     disp(['Complete COP for element ' num2str(j) 'out of ' num2str(n)])
@@ -190,7 +190,7 @@ end
 disp('Complete for entire wing')
 
 %% test plot for the center of pressure
-test=1;
+test=0;
 if test==1
     for j=1:length(element)
         figure
