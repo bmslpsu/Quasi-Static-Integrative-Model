@@ -269,8 +269,7 @@ function R_inv=EulerRotation()
 %% rotations
 %this function finds the rotation matrix from the fly stationary wing axis
 %to the moving wing axis. 
-%R is the rotation from the stationary to the moving. Therefore finding its
-%inverse is required
+%R is t
 syms beta1 phi1 psi1
 Rx = [1 0 0; 0 cosd(beta1) -sind(beta1); 0 sind(beta1) cosd(beta1)];
 Ry = [cosd(phi1) 0 sind(phi1); 0 1 0; -sind(phi1) 0 cosd(phi1)];
