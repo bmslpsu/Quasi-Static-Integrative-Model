@@ -1,6 +1,11 @@
 %Notes:
 %to have an idea of how the coordinate system is set up please refer to the
 %lagrangian model
+%% note on the axese
+%z-axis is along the length of the wing
+%x-axis is along the chord of the wing starting at the wing base and
+%is parallel to the abdomen of the fly
+%y-axis is perpendicular to the surface of the wing
 clear all
 clc
 close all
@@ -11,7 +16,7 @@ load('AnglesInter.mat') %loads previously generated data
 test=0; %plots the test graphs in the code. useful for debugging
 
 
-n=2; %number of wing elements
+n=10; %number of wing elements
 global time
 global wing_length rho
 rho=1.255;
@@ -68,36 +73,61 @@ element1=FindRotationalForce(element,beta_dotf,del_r,c);
 element2=FindAddedMass(element1,beta_dotf,beta_f,del_r,c,time);
 
 %% find force directions
-element3=FindForceVectors(element2,R_inv)
+element3=FindForceVectors(element2,R_inv,ey1,ex1,beta_f,phi_f,psi_f);
+
+%% find the total forces in x y and z directions
+[force_x, force_y, force_z]=Find_forces_XYZ(element3);
 %% Functions---------------------------------------------------------------
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
+function [force_x, force_y, force_z]=Find_forces_XYZ(element)
+
+force_Total=0; % the total force in x y and z directions
+for j=1:length(element)
+   force_Total=element(j).force_Rot_vec + element(j).force_AM_vec + element(j).force_lift_vec + element(j).force_drag_vec+force_Total;
+end
+   force_x=force_Total(1,:);
+   force_y=force_Total(2,:);
+   force_z=force_Total(3,:);
+
+end
+
 function element=FindForceVectors(element,R_inv,ey1,ex1,beta_f,phi_f,psi_f)
 %lift and drag are assumed vertical and horizontal
 %rotation and added mass forces are perpendicular to wing surface
 syms psi1 beta1 phi1
-e_WingNormal=[cosd(psi); sind(psi); 0]; %define the vector of the added mass and rot force
+
+%the normal to the surface of the wing defined in the wing reference frame
+%will be in the xy plane of the system
+e_WingNormal=[cosd(90-psi1); sind(90-psi1); 0]; %define the vector of the added mass and rot force
+tic
 for j=1:length(element)
-    f_lift_vec=element(j).force_Lift*ey1*R_inv;
-    f_drag_vec=element(j).force_Drag*ex1*R_inv;
-    f_addedMass_vec=element(j).force_AddedMass*e_WingNormal*R_inv;
-    f_Rot_vec=element(j).force_Rotation*e_WingNormal*R_inv;
-    
-    for i=1:length(beta_f)
-    beta1=beta_f(i);
-    phi1=phi_f(i);
-    psi1=psi_f(i);
+    disp(['calculating vector force for element ' num2str(j)])
+    for i=1:length(beta_f)-2 %i had to use -2 here because the addedmass force has an acceleration component
+        %and using the diff function reduces the length of the vector by 1
+        beta1=beta_f(i);
+        phi1=phi_f(i);
+        psi1=psi_f(i);
+        Rot_matrix=vpa(subs(R_inv));
+        f_lift_vec(:,i)=Rot_matrix*element(j).force_Lift(i)*ey1;
+        f_drag_vec(:,i)=Rot_matrix*element(j).force_Drag(i)*ex1;
+        f_addedMass_vec(:,i)=Rot_matrix*element(j).force_AddedMass(i)*e_WingNormal;
+        f_Rot_vec(:,i)=Rot_matrix*element(j).force_Rotation(i)*e_WingNormal;
+
+        if i==floor(length(beta_f)/4) 
+            disp(['Calculations for element ' num2str(j) ' are 1/4 done'])
+        elseif i==floor(length(beta_f)/2)
+            disp(['Calculations for element ' num2str(j) ' are 1/2 done'])
+        end
+        
+    end
     element(j).force_lift_vec=vpa(subs(f_lift_vec));
     element(j).force_drag_vec=vpa(subs(f_drag_vec));
     element(j).force_AM_vec=vpa(subs(f_addedMass_vec));
     element(j).force_Rot_vec=vpa(subs(f_Rot_vec));
-    end
 end
-
-
+toc
 end
-
-
 
 function element=FindAddedMass(element,beta_dotf,beta_f,del_r,c,time)
 global rho
@@ -180,7 +210,7 @@ for i=1:length(omega)
 end
 element(j).linear_vel=V_linear;
 element(j).linear_vel_norm=V_linear_Norm;
-disp(['done calculating linear velocity for element' num2str(j)])
+disp(['done calculating linear velocity for element ' num2str(j)])
 end
 end
 
