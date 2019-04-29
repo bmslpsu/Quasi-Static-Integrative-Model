@@ -11,7 +11,7 @@ load('AnglesInter.mat') %loads previously generated data
 test=0; %plots the test graphs in the code. useful for debugging
 
 
-n=10; %number of wing elements
+n=2; %number of wing elements
 global time
 global wing_length rho
 rho=1.255;
@@ -23,6 +23,9 @@ time=xx/220;
 wing_length=2/1000; % winglength in meters
 %% Extracts wings angles from data
 [phi_f, psi_f, beta_f,phi,psi,beta]=ExtractAngles(xx,yy1,yy2,yy3);
+%beta 
+%psi 
+%phi
 %%
 [phi_dotf,psi_dotf,beta_dotf] =GetEulerAngleVelocity(phi_f, psi_f, beta_f, phi,psi,beta);
 
@@ -30,12 +33,7 @@ wing_length=2/1000; % winglength in meters
 ex=[1;0;0];
 ey=[0;1;0];
 ez=[0;0;1];
-%% Rotational Force direction with respect to wing
-ey_Rotational_wing=sind(psi_f+90);
-ex_Rotational_wing=cosd(psi_f+90);
-%% Added Mass force
-ey_AddedMass_wing=sind(psi_f+90);
-ex_AddedMass_wing=cosd(psi_f+90);
+
 %% Euler Rotation
 R_inv=EulerRotation();
 
@@ -44,6 +42,8 @@ ex1=R_inv*ex;
 ey1=R_inv*ey;
 ez1=R_inv*ez;
 %% find angular velocity of wing with respect to stationary frame
+%omega_mag is in deg
+%omega is in deg
 [omega, omega_mag,omega_rad]  =GetWingAngVel(ex1,ey1,ez1,phi,psi,beta,phi_dotf,psi_dotf,beta_dotf);
 figure
 plot(omega_mag)
@@ -68,45 +68,66 @@ element1=FindRotationalForce(element,beta_dotf,del_r,c);
 element2=FindAddedMass(element1,beta_dotf,beta_f,del_r,c,time);
 
 %% find force directions
-FindForceVectors(element2,R_inv)
+element3=FindForceVectors(element2,R_inv)
 %% Functions---------------------------------------------------------------
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
-function element=FindForceVectors(element,R_inv,ey1,ex1)
+function element=FindForceVectors(element,R_inv,ey1,ex1,beta_f,phi_f,psi_f)
 %lift and drag are assumed vertical and horizontal
-
-j=1;
-f_lift_vec=element(j).force_Lift*ey1*R_inv;
+%rotation and added mass forces are perpendicular to wing surface
+syms psi1 beta1 phi1
+e_WingNormal=[cosd(psi); sind(psi); 0]; %define the vector of the added mass and rot force
+for j=1:length(element)
+    f_lift_vec=element(j).force_Lift*ey1*R_inv;
+    f_drag_vec=element(j).force_Drag*ex1*R_inv;
+    f_addedMass_vec=element(j).force_AddedMass*e_WingNormal*R_inv;
+    f_Rot_vec=element(j).force_Rotation*e_WingNormal*R_inv;
     
-
-%added mass is assumed to be perpnedicular to the surface of the wing
+    for i=1:length(beta_f)
+    beta1=beta_f(i);
+    phi1=phi_f(i);
+    psi1=psi_f(i);
+    element(j).force_lift_vec=vpa(subs(f_lift_vec));
+    element(j).force_drag_vec=vpa(subs(f_drag_vec));
+    element(j).force_AM_vec=vpa(subs(f_addedMass_vec));
+    element(j).force_Rot_vec=vpa(subs(f_Rot_vec));
+    end
 end
+
+
+end
+
+
 
 function element=FindAddedMass(element,beta_dotf,beta_f,del_r,c,time)
 global rho
-j=1;
-disp(['Calcualting added mass force for element ' num2str(j)])
-linear_acc=diff(eval(element(j).linear_vel)')'/(time(2)-time(1));
-[b, a] = butter(4, 20.5/(250/2),'low');
-linear_acc_filt1=filtfilt(b, a, linear_acc(1,:));
-linear_acc_filt2=filtfilt(b, a, linear_acc(2,:));
-linear_acc_filt3=filtfilt(b, a, linear_acc(3,:));
-plot(linear_acc(1,:))
-hold on
-plot(linear_acc_filt1)
-linear_acc_filt=[linear_acc_filt1; linear_acc_filt2;linear_acc_filt3];
-%issue with lengths: when using the derivative, the length of the new array
-%is one element smaller. In order to continue with the analysis, the larger
-%elements must be cropped to match the same size
-for i=1:length(linear_acc_filt1)
-    part1=rho*pi*c^2/4*del_r;
-    part2=(dot(element(j).linear_vel(:,i),linear_acc_filt(:,i))*sind(beta_f(i)))/element(j).linear_vel_norm(i);
-    part3=eval(element(j).linear_vel_norm(i)*beta_dotf(i)*cosd(beta_f(i)));
-    f_addedMass(i)=part1*(part2+part3);
+for j=1:length(element)
+    disp(['Calcualting added mass force for element ' num2str(j)])
+    linear_acc=diff(eval(element(j).linear_vel)')'/(time(2)-time(1));
+    % due to present noise, I have to filter the acceleration as well
+    [b, a] = butter(4, 20.5/(250/2),'low');
+    linear_acc_filt1=filtfilt(b, a, linear_acc(1,:));
+    linear_acc_filt2=filtfilt(b, a, linear_acc(2,:));
+    linear_acc_filt3=filtfilt(b, a, linear_acc(3,:));
+    figure
+    plot(linear_acc(1,:))
+    hold on
+    plot(linear_acc_filt1)
+    title('Linear acceleration with filtered data')
+    linear_acc_filt=[linear_acc_filt1; linear_acc_filt2;linear_acc_filt3];
+    %issue with lengths: when using the derivative, the length of the new array
+    %is one element smaller. In order to continue with the analysis, the larger
+    %elements must be cropped to match the same size
+    for i=1:length(linear_acc_filt1)
+        part1=rho*pi*c^2/4*del_r;
+        part2=(dot(element(j).linear_vel(:,i),linear_acc_filt(:,i))*sind(beta_f(i)))/element(j).linear_vel_norm(i);
+        part3=eval(element(j).linear_vel_norm(i)*beta_dotf(i)*cosd(beta_f(i)));
+        f_addedMass(i)=part1*(part2+part3);
+    end
+    disp(['Done calculating added mass force for element' num2str(j)])
+    beep
+    element(j).force_AddedMass=f_addedMass;
 end
-disp(['Done calculating added mass force for element' num2str(j)])
-beep
-element(j).force_AddedMass=f_addedMass;
 end
 
 function element =FindRotationalForce(element,beta_dotf,del_r,c)
@@ -118,15 +139,17 @@ function element =FindRotationalForce(element,beta_dotf,del_r,c)
 %throughout a wing stroke
 global C_r
 global rho
-j=1;
-disp(['Calculating rotation force for element' num2str(j)]);
-for i=1:length(element(j).linear_vel_norm)
-   F_rot(i)=eval(C_r*rho*c^2*del_r*element(j).linear_vel_norm(i)*(beta_dotf(i)*pi/180)^2);
-   if i==floor(length(element(j).linear_vel_norm)/2)
-       disp('calculation of rotational force is half done')
-   end
+for j=1:length(element)
+    disp(['Calculating rotation force for element' num2str(j)]);
+    for i=1:length(element(j).linear_vel_norm)
+        F_rot(i)=eval(C_r*rho*c^2*del_r*element(j).linear_vel_norm(i)*(beta_dotf(i)*pi/180)^2);
+        
+        if i==floor(length(element(j).linear_vel_norm)/2)
+            disp('calculation of rotational force is half done')
+        end
+    end
+    element(j).force_Rotation=F_rot;
 end
-element(j).force_Rotation=F_rot;
 end
 
 function element=LiftAndDragForces(element,phi_f,del_r)
@@ -271,6 +294,12 @@ function R_inv=EulerRotation()
 %to the moving wing axis. 
 %R is the rotation from the stationary to the moving. Therefore finding its
 %inverse is required
+
+% important note: as the wing is always moving, we cannot have one rotation
+% matrix. to avoid having many matricies, i used a symbolic representation
+% for this rotation. R_ivn; the output is a symbolic matrix which is
+% evaluated for every datapoint of the euler angles when needed. however,
+% it is not saved
 syms beta1 phi1 psi1
 Rx = [1 0 0; 0 cosd(beta1) -sind(beta1); 0 sind(beta1) cosd(beta1)];
 Ry = [cosd(phi1) 0 sind(phi1); 0 1 0; -sind(phi1) 0 cosd(phi1)];
