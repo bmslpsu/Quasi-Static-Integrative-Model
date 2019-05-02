@@ -22,8 +22,8 @@ dely=80/(y4(1)-y4(2));
 disp('click on the origin and desired end for the x-axis')
 [x5,y5] = getpts;
 
-t_axis=input('What is the length of the axis');
-delx=t_axis/(x5(2)-x5(1));
+disp('What is the 
+delx=1/(x5(2)-x5(1));
 %transforms from image to graph coordinate
 for i=1:length(x1)
     x1n(i)=x1(i)*delx;
@@ -46,7 +46,7 @@ plot(x2n,y2n)
 figure
 plot(x3n,y3n)
 %% not always needed
-%save('Angles.mat','x1n','y1n','x2n','y2n','x3n','y3n')
+save('Angles.mat','x1n','y1n','x2n','y2n','x3n','y3n')
 %% interpolation. required so all vectors have same length and points
 [x11n, ia, ic] = unique(x1n);
 y11n=y1n(ic:end-1);
@@ -66,4 +66,4 @@ plot(xx,yy2)
 hold on
 plot(xx,yy3)
 %% 
-%save('AnglesInter.mat','xx','yy1','yy2','yy3')
+save('AnglesInter.mat','xx','yy1','yy2','yy3')

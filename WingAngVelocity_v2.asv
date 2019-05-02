@@ -9,14 +9,13 @@
 clear all
 clc
 close all
+
 %% loads and assigns data
 digits(4); % sets decimal point accuracy
 load('AnglesInter.mat') %loads previously generated data
 %% variables
 test=0; %plots the test graphs in the code. useful for debugging
-
-
-n=2; %number of wing elements
+n=10; %number of wing elements
 global time
 global wing_length rho
 rho=1.255;
@@ -74,14 +73,22 @@ element2=FindAddedMass(element1,beta_dotf,beta_f,del_r,c,time);
 
 %% find force directions
 element3=FindForceVectors(element2,R_inv,ey1,ex1,beta_f,phi_f,psi_f);
+
+%% find the total forces in x y and z directions
+[force_x, force_y, force_z]=Find_forces_XYZ(element3);
 %% Functions---------------------------------------------------------------
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
-function [force_x force_y force_z]=Find_forces_XYZ(element)
+function [force_x, force_y, force_z]=Find_forces_XYZ(element)
+
+force_Total=0; % the total force in x y and z directions
 for j=1:length(element)
-   force_x=element(j).force_Rot_vec+element(j).force_AM_vec+    force_lift_vec
-    force_drag_vec
+   force_Total=element(j).force_Rot_vec + element(j).force_AM_vec + element(j).force_lift_vec + element(j).force_drag_vec+force_Total;
 end
+   force_x=force_Total(1,:);
+   force_y=force_Total(2,:);
+   force_z=force_Total(3,:);
+
 end
 
 function element=FindForceVectors(element,R_inv,ey1,ex1,beta_f,phi_f,psi_f)
@@ -92,7 +99,6 @@ syms psi1 beta1 phi1
 %the normal to the surface of the wing defined in the wing reference frame
 %will be in the xy plane of the system
 e_WingNormal=[cosd(90-psi1); sind(90-psi1); 0]; %define the vector of the added mass and rot force
-tic
 for j=1:length(element)
     disp(['calculating vector force for element ' num2str(j)])
     for i=1:length(beta_f)-2 %i had to use -2 here because the addedmass force has an acceleration component
@@ -118,7 +124,6 @@ for j=1:length(element)
     element(j).force_AM_vec=vpa(subs(f_addedMass_vec));
     element(j).force_Rot_vec=vpa(subs(f_Rot_vec));
 end
-toc
 end
 
 function element=FindAddedMass(element,beta_dotf,beta_f,del_r,c,time)
@@ -202,7 +207,7 @@ for i=1:length(omega)
 end
 element(j).linear_vel=V_linear;
 element(j).linear_vel_norm=V_linear_Norm;
-disp(['done calculating linear velocity for element' num2str(j)])
+disp(['done calculating linear velocity for element ' num2str(j)])
 end
 end
 
