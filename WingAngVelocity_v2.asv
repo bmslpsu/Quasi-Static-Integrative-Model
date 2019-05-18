@@ -9,7 +9,7 @@
 clear all
 clc
 close all
-
+tic
 %% loads and assigns data
 digits(4); % sets decimal point accuracy
 load('AnglesInter.mat') %loads previously generated data
@@ -41,6 +41,14 @@ ez=[0;0;1];
 %% Euler Rotation
 R_inv=EulerRotation();
 
+%% finding the location of the wing center of mass wrt to the body the fly
+% this code  was added here as part of the gant jean is writing. It plays
+% no part in the QS code and the force analysis. 
+syms a_1 b_1 % the coordinates of the wing center of mass in the wing reference frame
+% note as the wing ref frame moves with the wing, the location of the wing
+% COM remains constant in that frame
+
+COM
 %% moving vectors in terms of stationary frame
 ex1=R_inv*ex;
 ey1=R_inv*ey;
@@ -76,6 +84,10 @@ element3=FindForceVectors(element2,R_inv,ey1,ex1,beta_f,phi_f,psi_f);
 
 %% find the total forces in x y and z directions
 [force_x, force_y, force_z]=Find_forces_XYZ(element3);
+
+
+%% end of code timer
+toc
 %% Functions---------------------------------------------------------------
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------

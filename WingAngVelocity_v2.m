@@ -41,6 +41,21 @@ ez=[0;0;1];
 %% Euler Rotation
 R_inv=EulerRotation();
 
+%% finding the location of the wing center of mass wrt to the body the fly
+% this code  was added here as part of the gant jean is writing. It plays
+% no part in the QS code and the force analysis. 
+syms a_1 b_1 % the coordinates of the wing center of mass in the wing reference frame
+% note as the wing ref frame moves with the wing, the location of the wing
+% COM remains constant in that frame
+
+COM_cord=[a_1;0;b_1]; % since the wing is in the xz plane of the ref frame
+
+COM_Ground=R_inv*COM_cord; % takes us from the wing ref to the wing base ref which is stationary wrt to the fly
+R_z=[cosd(30) -sind(30) 0; sind(30) cosd(30) 0; 0 0 1]; 
+COM_Ground_2=R_z*COM_Ground;
+%gravity acts along the y-axis of the global frame
+COM_height=COM_Ground_2(2)
+
 %% moving vectors in terms of stationary frame
 ex1=R_inv*ex;
 ey1=R_inv*ey;
