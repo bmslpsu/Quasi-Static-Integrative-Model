@@ -30,9 +30,12 @@ wing_length=2/1000; % winglength in meters
 %beta 
 %psi 
 %phi
-%%
+%% find the angular velocity of the wing for each euler angle
 [phi_dotf,psi_dotf,beta_dotf] =GetEulerAngleVelocity(phi_f, psi_f, beta_f, phi,psi,beta);
-
+%% find the angular velocity in a different wat
+for i=1:length(phi_f)-1
+   phi_dotf_2(i)= (phi_f(i+1)-phi_f(i))/(time(i+1)-time(i));
+end
 %% Stationary wing reference frame
 ex=[1;0;0];
 ey=[0;1;0];
