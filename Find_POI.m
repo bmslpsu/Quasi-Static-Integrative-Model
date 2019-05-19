@@ -18,13 +18,13 @@ disp('click on the upper limit and origin of y-axis')
 [x4,y4] = getpts; %largest and smalles point on the y scale. Around 80 and -80
 dely=80/(y4(1)-y4(2));
 
-%this gets the time axis
+%% this gets the time axis
 disp('click on the origin and desired end for the x-axis')
 [x5,y5] = getpts;
 
 t_axis=input('What is the length of the axis');
 delx=t_axis/(x5(2)-x5(1));
-%transforms from image to graph coordinate
+%% transforms from image to graph coordinate
 for i=1:length(x1)
     x1n(i)=x1(i)*delx;
     y1n(i)=(y1(i)-y4(2))*dely;

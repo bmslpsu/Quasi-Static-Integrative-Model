@@ -15,7 +15,7 @@ digits(4); % sets decimal point accuracy
 load('AnglesInter.mat') %loads previously generated data
 %% variables
 test=0; %plots the test graphs in the code. useful for debugging
-n=10; %number of wing elements
+n=1; %number of wing elements
 global time
 global wing_length rho
 rho=1.255;
@@ -23,23 +23,18 @@ global c
 global C_r 
 C_r=1.55;
 c=0.6/1000; %turns chrod length to m
-time=xx/220;
-wing_length=2/1000; % winglength in meters
+time=xx/200;
+wing_length=1.5/1000; % winglength in meters
 %% Extracts wings angles from data
 [phi_f, psi_f, beta_f,phi,psi,beta]=ExtractAngles(xx,yy1,yy2,yy3);
-%beta 
-%psi 
-%phi
 %% find the angular velocity of the wing for each euler angle
 [phi_dotf,psi_dotf,beta_dotf] =GetEulerAngleVelocity(phi_f, psi_f, beta_f, phi,psi,beta);
-%% find the angular velocity in a different wat
-for i=1:length(phi_f)-1
-   phi_dotf_2(i)= (phi_f(i+1)-phi_f(i))/(time(i+1)-time(i));
-end
 %% Stationary wing reference frame
-ex=[1;0;0];
-ey=[0;1;0];
-ez=[0;0;1];
+global cop_x cop_y cop_z 
+syms cop_x cop_y cop_z
+ex=[cop_x;0;0];
+ey=[0;cop_y;0];
+ez=[0;0;cop_z];
 
 %% Euler Rotation
 R_inv=EulerRotation();
@@ -128,6 +123,9 @@ for j=1:length(element)
         beta1=beta_f(i);
         phi1=phi_f(i);
         psi1=psi_f(i);
+        cop_y=1;
+        cop_x=1;
+        cop_z=1;
         Rot_matrix=vpa(subs(R_inv));
         f_lift_vec(:,i)=Rot_matrix*element(j).force_Lift(i)*ey1;
         f_drag_vec(:,i)=Rot_matrix*element(j).force_Drag(i)*ex1;
@@ -241,11 +239,11 @@ x_test=(0.82*alpha/pi+0.05); %normalized with respect to chord length
 x_cp=c*(0.82*abs(psi_f*pi/180)/pi+0.05); %location of center of pressure in x-axis
 delz=wing_length/n;
 
-%% finds the distance vector to each center of pressure for a each element
+% finds the distance vector to each center of pressure for a each element
 for j=1:n
     disp(['Finding COP for element' num2str(j)])
     for i=1:length(x_cp)-1
-        r_cpp(1:3,i)=[-x_cp(i); 0; delz*j];
+        r_cpp(1:3,i)=[-x_cp(i); 0; delz/2+delz*(j-1)];
         beta1=beta_f(i);
         phi1=phi_f(i);
         psi1=psi_f(i);
@@ -291,7 +289,7 @@ psi=yy1; %deviation angle
 beta=yy3; %rotation angle
 
 %% filtering the position data due to noise by me
-[b, a] = butter(4, 3.5/(250/2),'low');
+[b, a] = butter(2, 3.5/(250/2),'low');
 phi_f=filtfilt(b, a, phi);
 psi_f=filtfilt(b, a, psi);
 beta_f=filtfilt(b, a, beta);
@@ -318,11 +316,15 @@ global time
 phi_dot=diff(phi)/(time(2)-time(1));
 psi_dot=diff(psi)/(time(2)-time(1));
 beta_dot=diff(beta)/(time(2)-time(1));
+%% filtering also to be done on the derivative of the angle
+[b, a] = butter(2, 0.01,'low');
 
 phi_dotf=diff(phi_f)/(time(2)-time(1));
 psi_dotf=diff(psi_f)/(time(2)-time(1));
 beta_dotf=diff(beta_f)/(time(2)-time(1));
-
+phi_dotf=filtfilt(b, a, phi_dotf);
+psi_dotf=filtfilt(b, a, psi_dotf);
+beta_dotf=filtfilt(b, a, beta_dotf);
 figure
 plot(phi_dotf)
 hold on
@@ -353,7 +355,7 @@ syms beta1 phi1 psi1
 Rx = [1 0 0; 0 cosd(beta1) -sind(beta1); 0 sind(beta1) cosd(beta1)];
 Ry = [cosd(phi1) 0 sind(phi1); 0 1 0; -sind(phi1) 0 cosd(phi1)];
 Rz = [cosd(psi1) -sind(psi1) 0; sind(psi1) cosd(psi1) 0; 0 0 1];
-R=Rz*Rx*Ry; % complete rotation from the stationary wing base frame to the moving wing frame
+R=Ry*Rz*Rx; % complete rotation from the stationary wing base frame to the moving wing frame
 R_inv=inv(R); %from moving frame to stationary frame
 end
 
@@ -367,6 +369,9 @@ for i=1:length(phi_dotf)
     beta1=beta(i);
     phi1=phi(i);
     psi1=psi(i);
+    cop_x=1;
+    cop_y=1;
+    cop_z=1;
     omega(1:3,i)=phi_dotf(i)*vpa(subs(ey1))+psi_dotf(i)*vpa(subs(ez1))+beta_dotf(i)*vpa(subs(ex1));
 end
 disp('done with vector ang vel')
