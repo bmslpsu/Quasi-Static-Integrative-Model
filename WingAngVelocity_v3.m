@@ -22,8 +22,8 @@ rho=1.255;
 global c 
 global C_r 
 C_r=1.55;
-c=0.6/1000; %turns chrod length to m
-time=xx/200;
+c=0.5/1000; %turns chrod length to m
+time=(xx-xx(1))/200;
 wing_length=1.5/1000; % winglength in meters
 %% Extracts wings angles from data
 [phi_f, psi_f, beta_f,phi,psi,beta]=ExtractAngles(xx,yy1,yy2,yy3);
@@ -32,9 +32,9 @@ wing_length=1.5/1000; % winglength in meters
 %% Stationary wing reference frame
 global cop_x cop_y cop_z 
 syms cop_x cop_y cop_z
-ex=[cop_x;0;0];
-ey=[0;cop_y;0];
-ez=[0;0;cop_z];
+ex=[1;0;0];
+ey=[0;1;0];
+ez=[0;0;1];
 
 %% Euler Rotation
 R_inv=EulerRotation();
@@ -52,7 +52,7 @@ COM_Ground=R_inv*COM_cord; % takes us from the wing ref to the wing base ref whi
 R_z=[cosd(30) -sind(30) 0; sind(30) cosd(30) 0; 0 0 1]; 
 COM_Ground_2=R_z*COM_Ground;
 %gravity acts along the y-axis of the global frame
-COM_height=COM_Ground_2(2)
+COM_height=COM_Ground_2(2);
 
 %% moving vectors in terms of stationary frame
 ex1=R_inv*ex;
@@ -64,6 +64,7 @@ ez1=R_inv*ez;
 [omega, omega_mag,omega_rad]  =GetWingAngVel(ex1,ey1,ez1,phi,psi,beta,phi_dotf,zeros(length(psi_dotf),1),zeros(length(psi_dotf),1));
 figure
 plot(omega_mag)
+%'note: this gives the absolute value of the magnitude not the sign'
 title('Angular velocity of a wing with respect to a nonmoving frame at the base of the wing')
 
 %% find the location of the center of pressure for each wing element
@@ -231,65 +232,13 @@ disp(['done calculating linear velocity for element ' num2str(j)])
 end
 end
 
-function element=FindDistanceOfCOP(phi_f,psi_f,beta_f,n,c,R_inv)
-%% Find the location of center of pressure
-global wing_length
-alpha=0:0.01:pi; %angle used in this equation is in radians. I check by comparing to paper
-x_test=(0.82*alpha/pi+0.05); %normalized with respect to chord length
-x_cp=c*(0.82*abs(psi_f*pi/180)/pi+0.05); %location of center of pressure in x-axis
-delz=wing_length/n;
-
-% finds the distance vector to each center of pressure for a each element
-for j=1:n
-    disp(['Finding COP for element' num2str(j)])
-    for i=1:length(x_cp)-1
-        r_cpp(1:3,i)=[-x_cp(i); 0; delz/2+delz*(j-1)];
-        beta1=beta_f(i);
-        phi1=phi_f(i);
-        psi1=psi_f(i);
-        r_cp(1:3,i)=vpa(subs(R_inv*r_cpp(1:3,i)));
-        if i==floor(length(x_cp)/2)
-            disp(['COP distance calculation for element ' num2str(j) ' is half done'])
-        end
-    end
-    disp(['Complete COP for element ' num2str(j) 'out of ' num2str(n)])
-    element(j).location_cop=r_cp;
-    element(j).locationInMovingFrame=r_cpp;
-    element(j).Distance_COP=norm(r_cp);
-end
-disp('Complete for entire wing')
-
-%% test plot for the center of pressure
-test=0;
-if test==1
-    for j=1:length(element)
-        figure
-        for i=1:length(element(j).location_cop)
-            plot3(element(j).location_cop(1,i),element(j).location_cop(2,i),element(j).location_cop(3,i),'*')
-            hold on
-            title('location of point of pressure for a single element throughout a wingstroke in the statonary wing frame')
-        end
-    end
-    
-    figure
-    %this plot below is not complete. will only plot the last element
-    for i=1:length(r_cpp)
-        plot3(r_cpp(1,i),r_cpp(2,i),r_cpp(3,i),'*')
-        hold on
-    end
-    title('location of point of pressure for a single element throughout a wingstroke in the moving wing frame')
-    figure
-    plot(x_cp)
-end
-end
-
 function [phi_f, psi_f, beta_f,phi,psi,beta]=ExtractAngles(xx,yy1,yy2,yy3)
 phi=yy2; %stroke angle
 psi=yy1; %deviation angle
 beta=yy3; %rotation angle
 
 %% filtering the position data due to noise by me
-[b, a] = butter(2, 3.5/(250/2),'low');
+[b, a] = butter(2, 0.01,'low');
 phi_f=filtfilt(b, a, phi);
 psi_f=filtfilt(b, a, psi);
 beta_f=filtfilt(b, a, beta);
@@ -355,31 +304,7 @@ syms beta1 phi1 psi1
 Rx = [1 0 0; 0 cosd(beta1) -sind(beta1); 0 sind(beta1) cosd(beta1)];
 Ry = [cosd(phi1) 0 sind(phi1); 0 1 0; -sind(phi1) 0 cosd(phi1)];
 Rz = [cosd(psi1) -sind(psi1) 0; sind(psi1) cosd(psi1) 0; 0 0 1];
-R=Ry*Rz*Rx; % complete rotation from the stationary wing base frame to the moving wing frame
-R_inv=inv(R); %from moving frame to stationary frame
-end
-
-function [omega, omega_mag,omega_rad]  =GetWingAngVel(ex1,ey1,ez1,phi,psi,beta,phi_dotf,psi_dotf,beta_dotf)
-%% angular velocity in vector form
-% omega (deg)
-% omega_mag(deg)
-%omega_rad (rad)
-disp('Calculating the angular velocity in vector form')
-for i=1:length(phi_dotf)
-    beta1=beta(i);
-    phi1=phi(i);
-    psi1=psi(i);
-    cop_x=1;
-    cop_y=1;
-    cop_z=1;
-    omega(1:3,i)=phi_dotf(i)*vpa(subs(ey1))+psi_dotf(i)*vpa(subs(ez1))+beta_dotf(i)*vpa(subs(ex1));
-end
-disp('done with vector ang vel')
-%% Magnitude of ang vel in deg/s
-disp('calculating magnitude of angular velocity')
-for i=1:length(omega)
-    omega_mag(i)=norm(omega(1:3,i));
-end
-disp('Finished calulating ang vel magnitude')
-omega_rad=omega_mag*pi/180; % magnitude in radians
+R=Rz*Ry*Rx; % complete rotation from the stationary wing base frame to the moving wing frame
+%R_inv=inv(R); %from moving frame to stationary frame
+R_inv=inv(R);
 end
