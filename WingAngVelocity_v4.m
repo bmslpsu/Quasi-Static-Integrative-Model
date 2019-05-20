@@ -14,12 +14,13 @@ clear all
 clc
 close all
 tic
+root='C:\Users\was29\Documents\MATLAB\Saved Data\QS simulation data\';
 %% loads and assigns data
 digits(4); % sets decimal point accuracy
 load('AnglesInter.mat') %loads previously generated data
 %% variables
 test=0; %plots the test graphs in the code. useful for debugging
-n=10; %number of wing elements
+n=30; %number of wing elements
 global time
 global wing_length rho
 rho=1.255;
