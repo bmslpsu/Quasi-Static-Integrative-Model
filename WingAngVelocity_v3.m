@@ -22,9 +22,9 @@ rho=1.255;
 global c 
 global C_r 
 C_r=1.55;
-c=0.5/1000; %turns chrod length to m
+c=0.4/1000; %turns chrod length to m
 time=(xx-xx(1))/200;
-wing_length=0.8/1000; % winglength in meters
+wing_length=1.5/1000; % winglength in meters
 %% Extracts wings angles from data
 [phi_f, psi_f, beta_f,phi,psi,beta]=ExtractAngles(xx,yy1,yy2,yy3);
 %% find the angular velocity of the wing for each euler angle
