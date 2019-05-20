@@ -15,7 +15,7 @@ digits(4); % sets decimal point accuracy
 load('AnglesInter.mat') %loads previously generated data
 %% variables
 test=0; %plots the test graphs in the code. useful for debugging
-n=1; %number of wing elements
+n=10; %number of wing elements
 global time
 global wing_length rho
 rho=1.255;
@@ -24,7 +24,7 @@ global C_r
 C_r=1.55;
 c=0.5/1000; %turns chrod length to m
 time=(xx-xx(1))/200;
-wing_length=1.5/1000; % winglength in meters
+wing_length=0.8/1000; % winglength in meters
 %% Extracts wings angles from data
 [phi_f, psi_f, beta_f,phi,psi,beta]=ExtractAngles(xx,yy1,yy2,yy3);
 %% find the angular velocity of the wing for each euler angle
@@ -90,8 +90,6 @@ element3=FindForceVectors(element2,R_inv,ey1,ex1,beta_f,phi_f,psi_f);
 
 %% find the total forces in x y and z directions
 [force_x, force_y, force_z]=Find_forces_XYZ(element3);
-
-
 %% end of code timer
 toc
 %% Functions---------------------------------------------------------------
@@ -221,14 +219,14 @@ end
 function element=FindLinearVelocity(element, omega)
 %finds the linear velocity of each element throughout a full wing stroke
 for j=1:length(element)
-disp(['calculating the linear velocity for element' num2str(j)])
-for i=1:length(omega)
-    V_linear(1:3,i)=cross(omega(1:3,i)*pi/180,element(j).location_cop(1:3,i));
-    V_linear_Norm(i)=norm(V_linear(1:3,i));
-end
-element(j).linear_vel=V_linear;
-element(j).linear_vel_norm=V_linear_Norm;
-disp(['done calculating linear velocity for element ' num2str(j)])
+    disp(['calculating the linear velocity for element' num2str(j)])
+    for i=1:length(omega)
+        V_linear(1:3,i)=cross(omega(1:3,i)*pi/180,element(j).location_cop(1:3,i));
+        V_linear_Norm(i)=norm(V_linear(1:3,i));
+    end
+    element(j).linear_vel=V_linear;
+    element(j).linear_vel_norm=V_linear_Norm;
+    disp(['done calculating linear velocity for element ' num2str(j)])
 end
 end
 
