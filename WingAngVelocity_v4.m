@@ -1,6 +1,9 @@
 %Notes:
 %to have an idea of how the coordinate system is set up please refer to the
 %lagrangian model
+
+% v4 has vector calculations in symbolic at the start of the code to reduce
+% calculation time for the rest of the code
 %% note on the axese
 %z-axis is along the length of the wing
 %x-axis is along the chord of the wing starting at the wing base and
@@ -57,6 +60,8 @@ COM_height=COM_Ground_2(2);
 ex1=R_inv*ex;
 ey1=R_inv*ey;
 ez1=R_inv*ez;
+%% moving vectors in stationary frame 2: hope to reduce runtime in later code
+[ex1, ey1, ez1]=Find_vectors(R_inv,phi_f,psi_f,beta_f);
 %% find angular velocity of wing with respect to stationary frame
 %omega_mag is in deg
 %omega is in deg

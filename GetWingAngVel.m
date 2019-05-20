@@ -9,7 +9,7 @@ for i=1:length(phi_dotf)
     phi1=phi(i);
     psi1=psi(i);
 
-    omega(1:3,i)=phi_dotf(i)*vpa(subs(ey1))+0*vpa(subs(ez1))+0*vpa(subs(ex1));
+    omega(1:3,i)=phi_dotf(i)*vpa(subs(ey1))+psi_dotf*vpa(subs(ez1))+beta_dotf*vpa(subs(ex1));
 end
 disp('done with vector ang vel')
 %% Magnitude of ang vel in deg/s

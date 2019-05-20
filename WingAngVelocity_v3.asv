@@ -30,6 +30,7 @@ wing_length=1.5/1000; % winglength in meters
 %% find the angular velocity of the wing for each euler angle
 [phi_dotf,psi_dotf,beta_dotf] =GetEulerAngleVelocity(phi_f, psi_f, beta_f, phi,psi,beta);
 %% Stationary wing reference frame
+global cop_x cop_y cop_z 
 syms cop_x cop_y cop_z
 ex=[1;0;0];
 ey=[0;1;0];
@@ -150,7 +151,7 @@ for j=1:length(element)
     disp(['Calcualting added mass force for element ' num2str(j)])
     linear_acc=diff(eval(element(j).linear_vel)')'/(time(2)-time(1));
     % due to present noise, I have to filter the acceleration as well
-    [b, a] = butter(4, 0.1,'low');
+    [b, a] = butter(4, 20.5/(250/2),'low');
     linear_acc_filt1=filtfilt(b, a, linear_acc(1,:));
     linear_acc_filt2=filtfilt(b, a, linear_acc(2,:));
     linear_acc_filt3=filtfilt(b, a, linear_acc(3,:));
