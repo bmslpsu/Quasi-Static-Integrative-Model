@@ -91,7 +91,7 @@ element1=FindRotationalForce(element,beta_dotf,del_r,c);
 element2=FindAddedMass(element1,beta_dotf,beta_f,del_r,c,time);
 
 %% find force directions
-element3=FindForceVectors(element2,R_inv,ey1,ex1,beta_f,phi_f,psi_f);
+element3=FindForceVectors(element2,R_inv2,ey11,ex11,ez11,beta_f,phi_f,psi_f);
 
 %% find the total forces in x y and z directions
 [force_x, force_y, force_z]=Find_forces_XYZ(element3);
@@ -112,27 +112,22 @@ end
 
 end
 
-function element=FindForceVectors(element,R_inv,ey1,ex1,beta_f,phi_f,psi_f)
+function element=FindForceVectors(element,R_inv2,ey11,ex11,ez1,beta_f,phi_f,psi_f)
 %lift and drag are assumed vertical and horizontal
 %rotation and added mass forces are perpendicular to wing surface
 syms psi1 beta1 phi1
 
 %the normal to the surface of the wing defined in the wing reference frame
 %will be in the xy plane of the system
-e_WingNormal=[cosd(90-psi1); sind(90-psi1); 0]; %define the vector of the added mass and rot force
+%e_WingNormal=[cosd(90-psi1); sind(90-psi1); 0]; %define the vector of the added mass and rot force
 for j=1:length(element)
     disp(['calculating vector force for element ' num2str(j)])
     for i=1:length(beta_f)-2 %i had to use -2 here because the addedmass force has an acceleration component
         %and using the diff function reduces the length of the vector by 1
-        beta1=beta_f(i);
-        phi1=phi_f(i);
-        psi1=psi_f(i);
-        cop_y=1;
-        cop_x=1;
-        cop_z=1;
-        Rot_matrix=vpa(subs(R_inv));
-        f_lift_vec(:,i)=Rot_matrix*element(j).force_Lift(i)*ey1;
-        f_drag_vec(:,i)=Rot_matrix*element(j).force_Drag(i)*ex1;
+        e_WingNormal=[cosd(90-psi_f(i)); sind(90-psi_f(i)); 0]; %define the vector of the added mass and rot force
+        Rot_matrix=R_inv2(:,:,i);
+        f_lift_vec(:,i)=Rot_matrix*element(j).force_Lift(i)*ey11(1:3,i);
+        f_drag_vec(:,i)=Rot_matrix*element(j).force_Drag(i)*ex11(1:3,i);
         f_addedMass_vec(:,i)=Rot_matrix*element(j).force_AddedMass(i)*e_WingNormal;
         f_Rot_vec(:,i)=Rot_matrix*element(j).force_Rotation(i)*e_WingNormal;
 
@@ -147,6 +142,7 @@ for j=1:length(element)
     element(j).force_drag_vec=vpa(subs(f_drag_vec));
     element(j).force_AM_vec=vpa(subs(f_addedMass_vec));
     element(j).force_Rot_vec=vpa(subs(f_Rot_vec));
+    disp(['Calculations for element ' num2str(j) ' are done'])
     
 end
 end
@@ -173,7 +169,7 @@ for j=1:length(element)
     for i=1:length(linear_acc_filt1)
         part1=rho*pi*c^2/4*del_r;
         part2=(dot(element(j).linear_vel(:,i),linear_acc_filt(:,i))*sind(beta_f(i)))/element(j).linear_vel_norm(i);
-        part3=eval(element(j).linear_vel_norm(i)*beta_dotf(i)*cosd(beta_f(i)));
+        part3=(element(j).linear_vel_norm(i)*beta_dotf(i)*cosd(beta_f(i)));
         f_addedMass(i)=part1*(part2+part3);
     end
     disp(['Done calculating added mass force for element' num2str(j)])
