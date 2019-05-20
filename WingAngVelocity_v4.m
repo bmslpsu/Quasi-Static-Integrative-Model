@@ -23,8 +23,8 @@ n=10; %number of wing elements
 global time
 global wing_length rho
 rho=1.255;
-global c 
-global C_r 
+global c
+global C_r
 C_r=1.55;
 c=0.6/1000; %turns chrod length to m
 time=(xx-xx(1))/220;
@@ -45,7 +45,7 @@ R_inv=EulerRotation();
 
 %% finding the location of the wing center of mass wrt to the body the fly
 % this code  was added here as part of the gant jean is writing. It plays
-% no part in the QS code and the force analysis. 
+% no part in the QS code and the force analysis.
 syms a_1 b_1 % the coordinates of the wing center of mass in the wing reference frame
 % note as the wing ref frame moves with the wing, the location of the wing
 % COM remains constant in that frame
@@ -53,7 +53,7 @@ syms a_1 b_1 % the coordinates of the wing center of mass in the wing reference 
 COM_cord=[a_1;0;b_1]; % since the wing is in the xz plane of the ref frame
 
 COM_Ground=R_inv*COM_cord; % takes us from the wing ref to the wing base ref which is stationary wrt to the fly
-R_z=[cosd(30) -sind(30) 0; sind(30) cosd(30) 0; 0 0 1]; 
+R_z=[cosd(30) -sind(30) 0; sind(30) cosd(30) 0; 0 0 1];
 COM_Ground_2=R_z*COM_Ground;
 %gravity acts along the y-axis of the global frame
 COM_height=COM_Ground_2(2);
@@ -85,7 +85,7 @@ element =FindLinearVelocity(element, omega ); %omega instead of phi_f
 element =LiftAndDragForces(element,phi_f,del_r);
 %%  Find the added mass force acting on each wing
 % note: the input anglur velocity is in deg/s. it is converted to rad/s in
-% the function. 
+% the function.
 element1=FindRotationalForce(element,beta_dotf,del_r,c);
 
 %% Added mass force
@@ -103,13 +103,13 @@ toc
 %--------------------------------------------------------------------------
 function [force_x, force_y, force_z]=Find_forces_XYZ(element)
 
-force_Total=0; % the total force in x y and z directions
+force_Total=0; % the total force in x y and z directions for each wing
 for j=1:length(element)
-   force_Total=element(j).force_Rot_vec + element(j).force_AM_vec + element(j).force_lift_vec + element(j).force_drag_vec+force_Total;
+    force_Total=element(j).force_Rot_vec + element(j).force_AM_vec + element(j).force_lift_vec + element(j).force_drag_vec+force_Total;
 end
-   force_x=force_Total(1,:);
-   force_y=force_Total(2,:);
-   force_z=force_Total(3,:);
+force_x=force_Total(1,:);
+force_y=force_Total(2,:);
+force_z=force_Total(3,:);
 
 end
 
@@ -127,12 +127,14 @@ for j=1:length(element)
         %and using the diff function reduces the length of the vector by 1
         e_WingNormal=[cosd(90-psi_f(i)); sind(90-psi_f(i)); 0]; %define the vector of the added mass and rot force
         Rot_matrix=R_inv2(:,:,i);
-        f_lift_vec(:,i)=Rot_matrix*element(j).force_Lift(i)*ey11(1:3,i);
-        f_drag_vec(:,i)=Rot_matrix*element(j).force_Drag(i)*ex11(1:3,i);
+        % f_lift_vec(:,i)=Rot_matrix*element(j).force_Lift(i)*ey11(1:3,i);
+        % f_drag_vec(:,i)=Rot_matrix*element(j).force_Drag(i)*ex11(1:3,i);
+        f_lift_vec(:,i)=Rot_matrix*element(j).force_Lift(i)*[0;1;0];
+        f_drag_vec(:,i)=Rot_matrix*element(j).force_Drag(i)*[1;0;0];
         f_addedMass_vec(:,i)=Rot_matrix*element(j).force_AddedMass(i)*e_WingNormal;
         f_Rot_vec(:,i)=Rot_matrix*element(j).force_Rotation(i)*e_WingNormal;
-
-        if i==floor(length(beta_f)/4) 
+        
+        if i==floor(length(beta_f)/4)
             disp(['Calculations for element ' num2str(j) ' are 1/4 done'])
         elseif i==floor(length(beta_f)/2)
             disp(['Calculations for element ' num2str(j) ' are 1/2 done'])
@@ -199,7 +201,7 @@ for j=1:length(element)
         end
     end
     element(j).force_Rotation=F_rot;
-     disp(['calculation of rotational force for element' num2str(j) 'are done'])
+    disp(['calculation of rotational force for element' num2str(j) 'are done'])
 end
 end
 
@@ -207,16 +209,16 @@ function element=LiftAndDragForces(element,phi_f,del_r)
 %this function will find only the magnitude not the direction
 
 for j=1:length(element)
-global rho c
-
-disp('calculating force for one element')
-for i=1:length(element(j).linear_vel)
-    C_L=0.225+1.58*sind(2.13*phi_f(i)-7.28);
-    C_D=1.92-1.55*cosd(2.04*phi_f(i)-9.82);
-    element(j).force_Drag(i)=0.5*c*rho*norm(element(j).linear_vel(:,i))^2*C_D*del_r;
-    element(j).force_Lift(i)=0.5*c*rho*norm(element(j).linear_vel(:,i))^2*C_L*del_r;
-end
-disp(['Finished force for element' num2str(j)])
+    global rho c
+    
+    disp('calculating force for one element')
+    for i=1:length(element(j).linear_vel)
+        C_L=0.225+1.58*sind(2.13*phi_f(i)-7.28);
+        C_D=1.92-1.55*cosd(2.04*phi_f(i)-9.82);
+        element(j).force_Drag(i)=0.5*c*rho*norm(element(j).linear_vel(:,i))^2*C_D*del_r;
+        element(j).force_Lift(i)=0.5*c*rho*norm(element(j).linear_vel(:,i))^2*C_L*del_r;
+    end
+    disp(['Finished force for element' num2str(j)])
 end
 disp('Done for entire wing')
 end
@@ -296,7 +298,7 @@ end
 function R_inv=EulerRotation()
 %% rotations
 %this function finds the rotation matrix from the fly stationary wing axis
-%to the moving wing axis. 
+%to the moving wing axis.
 %R is the rotation from the stationary to the moving. Therefore finding its
 %inverse is required
 
