@@ -155,7 +155,7 @@ function element=FindAddedMass(element,beta_dotf,beta_f,del_r,c,time)
 global rho
 for j=1:length(element)
     disp(['Calcualting added mass force for element ' num2str(j)])
-    linear_acc=diff((element(j).linear_vel)')'/(time(2)-time(1));
+    linear_acc=diff(eval(element(j).linear_vel)')'/(time(2)-time(1));
     % due to present noise, I have to filter the acceleration as well
     [b, a] = butter(4, 0.1,'low');
     linear_acc_filt1=filtfilt(b, a, linear_acc(1,:));
@@ -198,11 +198,11 @@ for j=1:length(element)
         F_rot(i)=C_r*rho*c^2*del_r*element(j).linear_vel_norm(i)*(beta_dotf(i)*pi/180); %modified this. should reduce force
         
         if i==floor(length(element(j).linear_vel_norm)/2) % if statement to keep track of where the code is
-            disp(['calculation of rotational force for element' num2str(j) 'are half done'])
+            disp('calculation of rotational force is half done')
         end
     end
     element(j).force_Rotation=F_rot;
-     disp(['calculation of rotational force for element' num2str(j) 'are done'])
+     disp('calculation of rotational force for element' num2str( is half done')
 end
 end
 

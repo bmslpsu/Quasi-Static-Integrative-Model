@@ -1,4 +1,4 @@
-function element=FindDistanceOfCOP(phi_f,psi_f,beta_f,n,c,R_inv)
+function element=FindDistanceOfCOP(psi_f,n,c,R_inv2)
 %% Find the location of center of pressure
 global wing_length
 alpha=0:0.01:pi; %angle used in this equation is in radians. I check by comparing to paper
@@ -7,14 +7,14 @@ x_cp=c*(0.82*abs(psi_f*pi/180)/pi+0.05); %location of center of pressure in x-ax
 delz=wing_length/n;
 
 % finds the distance vector to each center of pressure for a each element
+r_cpp=zeros(3,length(x_cp)-1);
+r_cp=zeros(3,length(x_cp)-1);
 for j=1:n
     disp(['Finding COP for element' num2str(j)])
     for i=1:length(x_cp)-1
         r_cpp(1:3,i)=[-x_cp(i); 0; delz/2+delz*(j-1)];
-        beta1=beta_f(i);
-        phi1=phi_f(i);
-        psi1=psi_f(i);
-        r_cp(1:3,i)=vpa(subs(R_inv*r_cpp(1:3,i)));
+ 
+        r_cp(1:3,i)=vpa(subs(R_inv2(:,:,i)*r_cpp(1:3,i)));
         if i==floor(length(x_cp)/2)
             disp(['COP distance calculation for element ' num2str(j) ' is half done'])
         end
