@@ -2,22 +2,21 @@ clear all
 clc
 digits(4)
 %% get the intact wing torque
-root='C:\Users\was\Documents\MATLAB\Data For QS\QS simulation data';
+root='C:\Users\was29\Documents\MATLAB\QS_Data';
 [file_intactwing,path_intact] = uigetfile(root,'Select the data for the intact wing');
 load([path_intact file_intactwing])
 %% start torque calculations for intact wing
 [torque_intact_total, torque_intact_element]=Find_Wing_Torque(element3);
+S_intact=S_3;
 %% load the chordwise damaged data
+third_moment=[];
 [file_chordwise,path_chordwise] = uigetfile(root,'Select the data for the chordwise damaged wing','MultiSelect', 'on');
 for i=1:length(file_chordwise)
     load([path_intact file_chordwise{i}])
     [Total_Torque(i),Torque_Mag_element]=Find_Wing_Torque(element3);
-    C_1 = strsplit(file_chordwise{i},'_');
-    C_1=strsplit(C_1{3},'.');
-    damage_per(i)=str2num(C_1{1});
-    i
+    third_moment=[third_moment S_3];
 end
- plot(damage_per,Total_Torque)
+ plot(third_moment/S_intact,Total_Torque)
  title('Torque vs percentage of damage wing')
  
  %% load the spanwise damaged data
@@ -32,16 +31,16 @@ for i=1:length(file_spanwise)
 end
 [damage_per_span, index]=sort(damage_per_span)
 Total_Torque_span=Total_Torque_span(index)
- plot(damage_per_span,Total_Torque_span/(9.81*0.002*10^-5))
+ plot(damage_per_span,Total_Torque_span/(9.81*0.002*10^-6))
  title('Torque vs percentage of damage wing')
-%% Functions
+%-----------------------------------------------------------
+%% Functions-----------------------------------------------
 function [Total_Torque,Torque_Mag_element]=Find_Wing_Torque(element3)
-
 for j=1:length(element3)
     for i=1:size(element3(j).force_Rot_vec,1)
-        Torque_element(i,j)=element3(j).force_Rot_vec(1,i)*element3(j).locationInMovingFrame(3,i)+...
-            element3(j).force_Drag(1,i)*element3(j).locationInMovingFrame(3,i)+...
-            element3(j).force_AM_vec(1,i)*element3(j).locationInMovingFrame(3,i);
+        Torque_element(i,j)=element3(j).force_Rot_vec(1,i)*element3(j).location_cop(3,i)+...
+            element3(j).force_Drag(1,i)*element3(j).location_cop(3,i)+...
+            element3(j).force_AM_vec(1,i)*element3(j).location_cop(3,i);
     end
     Torque_Mag_element(j)=mean(Torque_element(:,j)); %mean torque through each wingstroke for each element
 end
