@@ -64,7 +64,6 @@ ey1=R_inv*ey;
 ez1=R_inv*ez;
 %% moving vectors in stationary frame 2: hope to reduce runtime in later code
 [ex11, ey11, ez11,R_inv2]=Find_vectors(R_inv,phi_f,psi_f,beta_f);
-%% Inverse Transform
 
 %% find angular velocity of wing with respect to stationary frame
 %omega_mag is in deg

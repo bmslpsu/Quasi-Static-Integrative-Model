@@ -1,8 +1,6 @@
 function element=FindDistanceOfCOP(psi_f,n,c,R_inv2)
 %% Find the location of center of pressure
 global wing_length
-alpha=0:0.01:pi; %angle used in this equation is in radians. I check by comparing to paper
-x_test=(0.82*alpha/pi+0.05); %normalized with respect to chord length
 x_cp=c*(0.82*abs(psi_f*pi/180)/pi+0.05); %location of center of pressure in x-axis
 delz=wing_length/n;
 
@@ -27,7 +25,7 @@ end
 disp('Complete for entire wing')
 
 %% test plot for the center of pressure
-test=0;
+test=1;
 if test==1
     for j=1:length(element)
         figure
