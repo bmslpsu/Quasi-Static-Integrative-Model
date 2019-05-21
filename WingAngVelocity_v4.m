@@ -27,8 +27,7 @@ rho=1.255;
 global c
 global C_r
 C_r=1.55;
-c=0.45
-/1000; %turns chrod length to m
+c=0.6/1000; %turns chrod length to m
 time=(xx-xx(1))/220;
 wing_length=2/1000; % winglength in meters
 del_r=wing_length/n; % the length of each element along the span
@@ -98,11 +97,27 @@ element3=FindForceVectors(element2,R_inv2,ey11,ex11,ez11,beta_f,phi_f,psi_f);
 
 %% find the total forces in x y and z directions
 [force_x, force_y, force_z]=Find_forces_XYZ(element3);
+
+%% plots used to analyze the data
+Create_Plots(phi_f,force_y,force_x,time)
 %% end of code timer
 toc
 %% Functions---------------------------------------------------------------
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
+function []=Create_Plots(phi_f,force_y,force_x,time)
+figure
+subplot(3,1,1)
+plot(time,phi_f)
+title('Stroke angle')
+subplot(3,1,2)
+plot(time(1:end-2),force_y*2)
+title('Upwards force')
+subplot(3,1,3)
+plot(time(1:end-2),force_x*2)
+title('Force in x-direction (drag+addded mass +rot)')
+end
+
 function [force_x, force_y, force_z]=Find_forces_XYZ(element)
 
 force_Total=0; % the total force in x y and z directions for each wing
@@ -162,11 +177,6 @@ for j=1:length(element)
     linear_acc_filt1=filtfilt(b, a, linear_acc(1,:));
     linear_acc_filt2=filtfilt(b, a, linear_acc(2,:));
     linear_acc_filt3=filtfilt(b, a, linear_acc(3,:));
-    figure
-    plot(linear_acc(1,:))
-    hold on
-    plot(linear_acc_filt1)
-    title('Linear acceleration with filtered data')
     linear_acc_filt=[linear_acc_filt1; linear_acc_filt2;linear_acc_filt3];
     %issue with lengths: when using the derivative, the length of the new array
     %is one element smaller. In order to continue with the analysis, the larger
@@ -247,7 +257,7 @@ psi=yy1; %deviation angle
 beta=yy3; %rotation angle
 
 %% filtering the position data due to noise by me
-[b, a] = butter(2, 0.01,'low');
+[b, a] = butter(2, 0.02,'low');
 phi_f=filtfilt(b, a, phi);
 psi_f=filtfilt(b, a, psi);
 beta_f=filtfilt(b, a, beta);
@@ -275,7 +285,7 @@ phi_dot=diff(phi)/(time(2)-time(1));
 psi_dot=diff(psi)/(time(2)-time(1));
 beta_dot=diff(beta)/(time(2)-time(1));
 %% filtering also to be done on the derivative of the angle
-[b, a] = butter(2, 0.01,'low');
+[b, a] = butter(2, 0.02,'low');
 
 phi_dotf=diff(phi_f)/(time(2)-time(1));
 psi_dotf=diff(psi_f)/(time(2)-time(1));
