@@ -27,7 +27,8 @@ rho=1.255;
 global c
 global C_r
 C_r=1.55;
-c=0.3/1000; %turns chrod length to m
+c=0.45
+/1000; %turns chrod length to m
 time=(xx-xx(1))/220;
 wing_length=2/1000; % winglength in meters
 del_r=wing_length/n; % the length of each element along the span
@@ -130,8 +131,8 @@ for j=1:length(element)
         Rot_matrix=R_inv2(:,:,i);
         % f_lift_vec(:,i)=Rot_matrix*element(j).force_Lift(i)*ey11(1:3,i);
         % f_drag_vec(:,i)=Rot_matrix*element(j).force_Drag(i)*ex11(1:3,i);
-        f_lift_vec(:,i)=Rot_matrix*element(j).force_Lift(i)*[0;1;0];
-        f_drag_vec(:,i)=Rot_matrix*element(j).force_Drag(i)*[1;0;0];
+        f_lift_vec(:,i)=element(j).force_Lift(i)*[0;1;0]; %removed the rotation matrix because the direction of these two forces is known 
+        f_drag_vec(:,i)=element(j).force_Drag(i)*[1;0;0];
         f_addedMass_vec(:,i)=Rot_matrix*element(j).force_AddedMass(i)*e_WingNormal;
         f_Rot_vec(:,i)=Rot_matrix*element(j).force_Rotation(i)*e_WingNormal;
         
