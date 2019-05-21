@@ -97,21 +97,33 @@ element3=FindForceVectors(element2,R_inv2,ey11,ex11,ez11,beta_f,phi_f,psi_f);
 
 %% find the total forces in x y and z directions
 [force_x, force_y, force_z]=Find_forces_XYZ(element3);
+
+%% plots used to analyze the data
+Create_Plots(phi_f,force_y,force_x,time)
 %% end of code timer
 toc
 %% Functions---------------------------------------------------------------
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
+function S_3=Find_Third_Moment(wing_length,c)
+n_elements=10;
+x_cor=linspace(wing_length/(2*n_elements),wing_length-wing_length/(2*n_elements),n_elements);
+y_cor=linspace(c/(2*n_elements),c-c/(2*n_elements),n_elements);
+area_el=(c/n_elements)*wing_length/n_elements;
+for j=1:length(
+
+end
 function []=Create_Plots(phi_f,force_y,force_x,time)
+figure
 subplot(3,1,1)
 plot(time,phi_f)
 title('Stroke angle')
 subplot(3,1,2)
-plot(time(1:end-2),force_y)
-title('Upwards 
-subplot(3,1,1)
-plot(time(1:end-2),force_x)
-
+plot(time(1:end-2),force_y*2)
+title('Upwards force')
+subplot(3,1,3)
+plot(time(1:end-2),force_x*2)
+title('Force in x-direction (drag+addded mass +rot)')
 end
 
 function [force_x, force_y, force_z]=Find_forces_XYZ(element)

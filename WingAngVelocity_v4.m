@@ -29,7 +29,7 @@ global C_r
 C_r=1.55;
 c=0.6/1000; %turns chrod length to m
 time=(xx-xx(1))/220;
-wing_length=2/1000; % winglength in meters
+wing_length=1.7/1000; % winglength in meters
 del_r=wing_length/n; % the length of each element along the span
 %% Extracts wings angles from data
 [phi_f, psi_f, beta_f,phi,psi,beta]=ExtractAngles(xx,yy1,yy2,yy3);
@@ -100,11 +100,31 @@ element3=FindForceVectors(element2,R_inv2,ey11,ex11,ez11,beta_f,phi_f,psi_f);
 
 %% plots used to analyze the data
 Create_Plots(phi_f,force_y,force_x,time)
+
+%% find the third moment of inertia
+S_3=Find_Third_Moment(wing_length,c);
+%% save script for the data
+save_name=['WingRemaining_' num2str(wing_length/0.002*100) '_' num2str(c/0.0006*100) '_Percent.mat'];
+save_root='C:\Users\was29\Documents\MATLAB\QS_Data\';
+save([save_root save_name],'element3','force_x','force_y','force_z','c','wing_length','time','S_3')
 %% end of code timer
 toc
 %% Functions---------------------------------------------------------------
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
+function S_3=Find_Third_Moment(wing_length,c)
+n_elements=500;
+x_cor=linspace(wing_length/(2*n_elements),wing_length-wing_length/(2*n_elements),n_elements);
+y_cor=linspace(c/(2*n_elements),c-c/(2*n_elements),n_elements);
+area_el=(c/n_elements)*wing_length/n_elements;
+S_3=0;
+for j=1:length(y_cor)
+    for i=1:length(x_cor)
+        S_3=S_3+x_cor(i)^3*(area_el);
+    end
+end
+
+end
 function []=Create_Plots(phi_f,force_y,force_x,time)
 figure
 subplot(3,1,1)
