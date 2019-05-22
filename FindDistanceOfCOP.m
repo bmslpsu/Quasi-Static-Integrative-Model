@@ -25,7 +25,7 @@ end
 disp('Complete for entire wing')
 
 %% test plot for the center of pressure
-test=1;
+test=0;
 if test==1
     for j=1:length(element)
         figure

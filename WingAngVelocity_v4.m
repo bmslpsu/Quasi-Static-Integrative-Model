@@ -20,14 +20,14 @@ digits(4); % sets decimal point accuracy
 load('AnglesInter.mat') %loads previously generated data
 %% variables
 test=0; %plots the test graphs in the code. useful for debugging
-n=30; %number of wing elements
+n=20; %number of wing elements
 global time
 global wing_length rho
 rho=1.255;
 global c
 global C_r
 C_r=1.55;
-c=0.3/1000; %turns chrod length to m
+c=0.6/1000; %turns chrod length to m
 time=(xx-xx(1))/220;
 wing_length=2/1000; % winglength in meters
 del_r=wing_length/n; % the length of each element along the span
