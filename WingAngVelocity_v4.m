@@ -27,7 +27,7 @@ rho=1.255;
 global c
 global C_r
 C_r=1.55;
-c=0.6/1000; %turns chrod length to m
+c=0.4/1000; %turns chrod length to m
 time=(xx-xx(1))/220;
 wing_length=2/1000; % winglength in meters
 del_r=wing_length/n; % the length of each element along the span
