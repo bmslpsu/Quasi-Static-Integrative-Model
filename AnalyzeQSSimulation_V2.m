@@ -15,10 +15,10 @@ third_moment=[];
 [file_chordwise,path_chordwise] = uigetfile(root,'Select the data for the chordwise damaged wing','MultiSelect', 'on');
 for i=1:length(file_chordwise)
     load([path_intact file_chordwise{i}])
-    [Total_Torque(i)]=Find_Wing_Torque(element3);
+    [Total_Torque(i)]=Find_Wing_Torque_2(element3);
     third_moment=[third_moment S_3];
 end
- plot(third_moment/S_intact,(torque_intact_total-Total_Torque)/(10^-6*0.002*9.81))
+ plot(third_moment/S_intact,(-torque_intact_total-Total_Torque)/(10^-6*0.002*9.81))
  title('Torque vs (S3_D/S3_I) for chrodwise wing damage (reduced wing span length)')
  xlabel('S3 Damaged/ S3 Intact')
  ylabel('Normalized torque T/(mgl)')
@@ -29,13 +29,12 @@ end
 third_moment_2=[];
 for i=1:length(file_spanwise)
     load([path_span file_spanwise{i}])
-    [Total_Torque_2(i)]=Find_Wing_Torque(element3);
+    [Total_Torque_2(i)]=Find_Wing_Torque_2(element3);
     third_moment_2=[third_moment_2 S_3];
     i
 end
 hold on
-
-plot(third_moment_2/S_intact,(torque_intact_total-Total_Torque_2)/(10^-6*0.0002*9.81))
+plot(third_moment_2/S_intact,(torque_intact_total-Total_Torque_2)/(10^-6*0.002*9.81))
 title('Torque vs (S3_D/S3_I) for spanwise wing damage (reduced wing chord length)')
 xlabel('S3 Damaged/ S3 Intact')
 ylabel('Normalized torque T/(mgl)')
