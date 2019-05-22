@@ -35,7 +35,7 @@ for i=1:length(file_spanwise)
 end
 hold on
 
-plot(third_moment_2/S_intact,(torque_intact_total-Total_Torque_2)/(10^-6*0.002*9.81))
+plot(third_moment_2/S_intact,(torque_intact_total-Total_Torque_2)/(10^-6*0.0002*9.81))
 title('Torque vs (S3_D/S3_I) for spanwise wing damage (reduced wing chord length)')
 xlabel('S3 Damaged/ S3 Intact')
 ylabel('Normalized torque T/(mgl)')
