@@ -14,7 +14,6 @@ clear all
 clc
 close all
 tic
-root='C:\Users\was29\Documents\MATLAB\Saved Data\QS simulation data\';
 %% loads and assigns data
 digits(4); % sets decimal point accuracy
 load('AnglesInter.mat') %loads previously generated data
@@ -27,7 +26,7 @@ rho=1.255;
 global c
 global C_r
 C_r=1.55;
-c=0.4/1000; %turns chrod length to m
+c=0.5/1000; %turns chrod length to m
 time=(xx-xx(1))/220;
 wing_length=2/1000; % winglength in meters
 del_r=wing_length/n; % the length of each element along the span

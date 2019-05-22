@@ -26,18 +26,21 @@ end
  
  %% load the spanwise damaged data
 [file_spanwise,path_span] = uigetfile(root,'Select the data for the spanwise damaged wing','MultiSelect', 'on');
+third_moment_2=[];
 for i=1:length(file_spanwise)
-    load([path_intact file_spanwise{i}])
-    [Total_Torque_span(i),Torque_Mag_element]=Find_Wing_Torque(element3);
-    C_1 = strsplit(file_spanwise{i},'_');
-    C_1=strsplit(C_1{3},'.');
-    damage_per_span(i)=str2num(C_1{1});
+    load([path_span file_spanwise{i}])
+    [Total_Torque_2(i)]=Find_Wing_Torque(element3);
+    third_moment_2=[third_moment_2 S_3];
     i
 end
-[damage_per_span, index]=sort(damage_per_span)
-Total_Torque_span=Total_Torque_span(index)
-%  plot(damage_per_span,(Total_Torque_span/(9.81*0.002*10^-6))
-%  title('Torque vs percentage of damage wing')
+hold on
+
+plot(third_moment_2/S_intact,(torque_intact_total-Total_Torque_2)/(10^-6*0.002*9.81))
+title('Torque vs (S3_D/S3_I) for spanwise wing damage (reduced wing chord length)')
+xlabel('S3 Damaged/ S3 Intact')
+ylabel('Normalized torque T/(mgl)')
+ylim([-0.05 0.15])
+
 %-----------------------------------------------------------
 %% Functions-----------------------------------------------
 function [Torque_mag]=Find_Wing_Torque(element3)
