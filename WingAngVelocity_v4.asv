@@ -266,7 +266,7 @@ plot(Lift_wing_force)
 title('lift force for the whole wing throughout a stroke')
         
 end
-
+end
 
 function element=FindLinearVelocity(element, omega)
 %finds the linear velocity of each element throughout a full wing stroke
