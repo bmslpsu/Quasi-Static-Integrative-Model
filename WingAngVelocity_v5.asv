@@ -2,9 +2,8 @@
 %to have an idea of how the coordinate system is set up please refer to the
 %lagrangian model
 
-% v4 has vector calculations in symbolic at the start of the code to reduce
-% calculation time for the rest of the code. this worked and the code is
-% much faster
+% v5 takes into consideration the signs when calculating the forces for the
+% lift and drag.
 %% note on the axese
 %z-axis is along the length of the wing
 %x-axis is along the chord of the wing starting at the wing base and
@@ -26,7 +25,7 @@ rho=1.255;
 global c
 global C_r
 C_r=1.55;
-c=0.59/1000; %turns chrod length to m
+c=0.5/1000; %turns chrod length to m
 time=(xx-xx(1))/220;
 wing_length=2/1000; % winglength in meters
 del_r=wing_length/n; % the length of each element along the span
@@ -80,14 +79,14 @@ element=FindDistanceOfCOP(psi_f,n,c,R_inv2);
 element =FindLinearVelocity(element, omega ); %omega instead of phi_f
 
 %% find the lift and drag forces acting on each blade element
-element =LiftAndDragForces(element,psi_f,del_r,1);
+[element, Lift_force, Drag_force] =LiftAndDragForces(element,psi_f,del_r,phi_dotf,1);
 %%  Find the added mass force acting on each wing
 % note: the input anglur velocity is in deg/s. it is converted to rad/s in
 % the function.
-element1=FindRotationalForce(element,beta_dotf,del_r,c);
+[element1, Rot_force]=FindRotationalForce(element,psi_dotf,del_r,c,1);
 
 %% Added mass force
-element2=FindAddedMass(element1,beta_dotf,beta_f,del_r,c,time);
+[element2, Am_force]=FindAddedMass(element1,psi_dotf,psi_f,del_r,c,time,1);
 
 %% find force directions
 element3=FindForceVectors(element2,R_inv2,ey11,ex11,ez11,beta_f,phi_f,psi_f);
@@ -95,6 +94,7 @@ element3=FindForceVectors(element2,R_inv2,ey11,ex11,ez11,beta_f,phi_f,psi_f);
 %% find the total forces in x y and z directions
 [force_x, force_y, force_z]=Find_forces_XYZ(element3);
 
+%% extra: Find the rotational force i
 %% plots used to analyze the data
 Create_Plots(phi_f,force_y,force_x,time)
 
@@ -109,6 +109,22 @@ toc
 %% Functions---------------------------------------------------------------
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
+function force_rot_lift=FindForceRotLift(element)
+if test==1
+    force_rot_lift=zeros(1,length(element(1).force_Rot_vec(2,:)));
+    for j=1:length(element(1).force_Rot_vec(2,:))
+        Rot_wing_dummy=0;
+        for i=1:length(element)
+            Rot_wing_dummy=Rot_wing_dummy+element(i).force_Rot_vec(2,j);
+        end
+        force_rot_lift(j)=Rot_wing_dummy;
+    end
+end
+figure
+plot(force_rot_lift)
+title('Lift rotational force')
+end
+
 function S_3=Find_Third_Moment(wing_length,c)
 n_elements=500;
 x_cor=linspace(wing_length/(2*n_elements),wing_length-wing_length/(2*n_elements),n_elements);
@@ -184,7 +200,7 @@ for j=1:length(element)
 end
 end
 
-function element=FindAddedMass(element,beta_dotf,beta_f,del_r,c,time)
+function [element,AM_wing_force] =FindAddedMass(element,psi_dotf,psi_f,del_r,c,time,test)
 global rho
 for j=1:length(element)
     disp(['Calcualting added mass force for element ' num2str(j)])
@@ -200,17 +216,32 @@ for j=1:length(element)
     %elements must be cropped to match the same size
     for i=1:length(linear_acc_filt1)
         part1=rho*pi*c^2/4*del_r;
-        part2=(dot(element(j).linear_vel(:,i),linear_acc_filt(:,i))*sind(beta_f(i)))/element(j).linear_vel_norm(i);
-        part3=(element(j).linear_vel_norm(i)*beta_dotf(i)*cosd(beta_f(i)));
+        part2=(dot(element(j).linear_vel(:,i),linear_acc_filt(:,i))*sind(psi_f(i)))/element(j).linear_vel_norm(i);
+        part3=(element(j).linear_vel_norm(i)*psi_dotf(i)*cosd(psi_f(i)));
         f_addedMass(i)=part1*(part2+part3);
     end
     disp(['Done calculating added mass force for element' num2str(j)])
     beep
     element(j).force_AddedMass=f_addedMass;
+    
+    
 end
+if test==1
+    AM_wing_force=zeros(1,length(element(1).force_Lift));
+    for j=1:length(element(1).force_AddedMass)
+        AM_wing_dummy=0;
+        for i=1:length(element)
+            AM_wing_dummy=AM_wing_dummy+element(i).force_AddedMass(j);
+        end
+        AM_wing_force(j)=AM_wing_dummy;
+    end
+end
+figure
+plot(AM_wing_force)
+title('Added Mass force')
 end
 
-function element =FindRotationalForce(element,beta_dotf,del_r,c)
+function [element, Rot_wing_force] =FindRotationalForce(element,psi_dotf,del_r,c,test)
 %del_r (m)
 %c (m)
 %C_r from lit (1.55)
@@ -223,7 +254,7 @@ F_rot=zeros(1,length(element(1).linear_vel_norm));
 for j=1:length(element)
     disp(['Calculating rotation force for element' num2str(j)]);
     for i=1:length(element(j).linear_vel_norm)
-        F_rot(i)=C_r*rho*c^2*del_r*element(j).linear_vel_norm(i)*(beta_dotf(i)*pi/180); %modified this. should reduce force
+        F_rot(i)=C_r*rho*c^2*del_r*element(j).linear_vel_norm(i)*(abs(psi_dotf(i))*pi/180); %modified this. should reduce force
         
         if i==floor(length(element(j).linear_vel_norm)/2) % if statement to keep track of where the code is
             disp(['calculation of rotational force for element' num2str(j) 'are half done'])
@@ -232,9 +263,22 @@ for j=1:length(element)
     element(j).force_Rotation=F_rot;
     disp(['calculation of rotational force for element' num2str(j) 'are done'])
 end
+
+if test==1
+    Rot_wing_force=zeros(1,length(element(1).force_Lift));
+    for j=1:length(element(1).force_Rotation)
+        Rot_wing_dummy=0;
+        for i=1:length(element)
+            Rot_wing_dummy=Rot_wing_dummy+element(i).force_Rotation(j);
+        end
+        Rot_wing_force(j)=Rot_wing_dummy;
+    end
+end
+figure
+plot(Rot_wing_force)
 end
 
-function element=LiftAndDragForces(element,psi_f,del_r,phi_test)
+function [element,Lift_wing_force,Drag_wing_force] =LiftAndDragForces(element,psi_f,del_r,phi_dotf,test)
 %this function will find only the magnitude not the direction
 %test is used to plot some debugging graphs
 for j=1:length(element)
@@ -242,10 +286,11 @@ for j=1:length(element)
     
     disp('calculating force for one element')
     for i=1:length(element(j).linear_vel)
+        %angle of attack is in degrees (sane 2002)
         C_L(i)=0.225+1.58*sind(2.13*abs(psi_f(i))-7.28);
         C_D=1.92-1.55*cosd(2.04*abs(psi_f(i))-9.82);
-        element(j).force_Drag(i)=0.5*c*rho*norm(element(j).linear_vel(:,i))^2*C_D*del_r;
-        element(j).force_Lift(i)=*sign(phi_dotf)0.5*c*rho*norm(element(j).linear_vel(:,i))^2*C_L(i)*del_r;
+        element(j).force_Drag(i)=sign(phi_dotf(i))*0.5*c*rho*norm(element(j).linear_vel(:,i))^2*C_D*del_r*(-sign(psi_f(i))*sign(phi_dotf(i)));
+        element(j).force_Lift(i)=0.5*c*rho*norm(element(j).linear_vel(:,i))^2*C_L(i)*del_r;
     end
     disp(['Finished force for element' num2str(j)])
 end
@@ -270,11 +315,15 @@ end
 figure 
 plot(Lift_wing_force)
 title('lift force for the whole wing throughout a stroke')
-     
-
+    
 hold on
 plot(Drag_wing_force)
 title('drag force for the whole wing throughout a stroke')
+
+figure
+Force_Translational=sqrt(Lift_wing_force.^2+Drag_wing_force.^2);
+plot(Force_Translational)
+title('Translation force as described by Sane and Dickinson 2002')
 end
 
 
