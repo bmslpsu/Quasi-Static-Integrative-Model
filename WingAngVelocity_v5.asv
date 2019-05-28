@@ -66,7 +66,8 @@ ez1=R_inv*ez;
 %% find angular velocity of wing with respect to stationary frame
 %omega_mag is in deg
 %omega is in deg
-[omega, omega_mag,omega_rad]=GetWingAngVel(ex11,ey11,ez11,phi_dotf,psi_dotf,beta_dotf);
+[omega, omega_mag,omega_rad]=GetWingAngVel(ex11,ey11,ez11,phi_dotf,zeros(1,length(psi_dotf)),zeros(1,length(beta_dotf)));
+[omega, omega_mag,omega_rad]=GetWingAngVel(ex11,ey11,ez11,phi_dotf,psi_dotf,zeros(1,length(beta_dotf)));
 figure
 plot(omega_mag)
 %'note: this gives the absolute value of the magnitude not the sign'
@@ -80,7 +81,7 @@ element =FindLinearVelocity(element, omega ); %omega instead of phi_f
 
 %% find the lift and drag forces acting on each blade element
 [element, Lift_force, Drag_force] =LiftAndDragForces(element,psi_f,del_r,phi_dotf,1);
-%%  Find the added mass force acting on each wing
+%%  Find the rotational force acting on each wing
 % note: the input anglur velocity is in deg/s. it is converted to rad/s in
 % the function.
 [element1, Rot_force]=FindRotationalForce(element,psi_dotf,del_r,c,1);
@@ -94,7 +95,8 @@ element3=FindForceVectors(element2,R_inv2,ey11,ex11,ez11,beta_f,phi_f,psi_f);
 %% find the total forces in x y and z directions
 [force_x, force_y, force_z]=Find_forces_XYZ(element3);
 
-%% extra: Find the rotational force i
+%% extra: Find the rotational force in the lift direction,(y-axis)
+ force_rot_lift=FindForceRotLift(element3);
 %% plots used to analyze the data
 Create_Plots(phi_f,force_y,force_x,time)
 
@@ -110,15 +112,14 @@ toc
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 function force_rot_lift=FindForceRotLift(element)
-if test==1
-    force_rot_lift=zeros(1,length(element(1).force_Rot_vec(2,:)));
-    for j=1:length(element(1).force_Rot_vec(2,:))
-        Rot_wing_dummy=0;
-        for i=1:length(element)
-            Rot_wing_dummy=Rot_wing_dummy+element(i).force_Rot_vec(2,j);
-        end
-        force_rot_lift(j)=Rot_wing_dummy;
+
+force_rot_lift=zeros(1,length(element(1).force_Rot_vec(2,:)));
+for j=1:length(element(1).force_Rot_vec(2,:))
+    Rot_wing_dummy=0;
+    for i=1:length(element)
+        Rot_wing_dummy=Rot_wing_dummy+element(i).force_Rot_vec(2,j);
     end
+    force_rot_lift(j)=Rot_wing_dummy;
 end
 figure
 plot(force_rot_lift)
@@ -222,8 +223,7 @@ for j=1:length(element)
     end
     disp(['Done calculating added mass force for element' num2str(j)])
     beep
-    element(j).force_AddedMass=f_addedMass;
-    
+    element(j).force_AddedMass=f_addedMass;    
     
 end
 if test==1
@@ -254,7 +254,7 @@ F_rot=zeros(1,length(element(1).linear_vel_norm));
 for j=1:length(element)
     disp(['Calculating rotation force for element' num2str(j)]);
     for i=1:length(element(j).linear_vel_norm)
-        F_rot(i)=C_r*rho*c^2*del_r*element(j).linear_vel_norm(i)*(abs(psi_dotf(i))*pi/180); %modified this. should reduce force
+        F_rot(i)=C_r*rho*c^2*del_r*element(j).linear_vel_norm(i)*((psi_dotf(i))*pi/180); %modified this. should reduce force
         
         if i==floor(length(element(j).linear_vel_norm)/2) % if statement to keep track of where the code is
             disp(['calculation of rotational force for element' num2str(j) 'are half done'])
@@ -349,7 +349,7 @@ psi=yy1; %deviation angle
 beta=yy3; %rotation angle
 
 %% filtering the position data due to noise by me
-[b, a] = butter(2, 0.02,'low');
+[b, a] = butter(2, 0.045,'low');
 phi_f=filtfilt(b, a, phi);
 psi_f=filtfilt(b, a, psi);
 beta_f=filtfilt(b, a, beta);

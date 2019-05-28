@@ -67,6 +67,7 @@ ez1=R_inv*ez;
 %omega_mag is in deg
 %omega is in deg
 [omega, omega_mag,omega_rad]=GetWingAngVel(ex11,ey11,ez11,phi_dotf,zeros(1,length(psi_dotf)),zeros(1,length(beta_dotf)));
+%[omega, omega_mag,omega_rad]=GetWingAngVel(ex11,ey11,ez11,phi_dotf,psi_dotf,beta_dotf);
 figure
 plot(omega_mag)
 %'note: this gives the absolute value of the magnitude not the sign'
@@ -222,8 +223,7 @@ for j=1:length(element)
     end
     disp(['Done calculating added mass force for element' num2str(j)])
     beep
-    element(j).force_AddedMass=f_addedMass;
-    
+    element(j).force_AddedMass=f_addedMass;    
     
 end
 if test==1
@@ -254,7 +254,7 @@ F_rot=zeros(1,length(element(1).linear_vel_norm));
 for j=1:length(element)
     disp(['Calculating rotation force for element' num2str(j)]);
     for i=1:length(element(j).linear_vel_norm)
-        F_rot(i)=C_r*rho*c^2*del_r*element(j).linear_vel_norm(i)*(abs(psi_dotf(i))*pi/180); %modified this. should reduce force
+        F_rot(i)=C_r*rho*c^2*del_r*element(j).linear_vel_norm(i)*((psi_dotf(i))*pi/180); %modified this. should reduce force
         
         if i==floor(length(element(j).linear_vel_norm)/2) % if statement to keep track of where the code is
             disp(['calculation of rotational force for element' num2str(j) 'are half done'])
@@ -349,7 +349,7 @@ psi=yy1; %deviation angle
 beta=yy3; %rotation angle
 
 %% filtering the position data due to noise by me
-[b, a] = butter(2, 0.02,'low');
+[b, a] = butter(2, 0.045,'low');
 phi_f=filtfilt(b, a, phi);
 psi_f=filtfilt(b, a, psi);
 beta_f=filtfilt(b, a, beta);
