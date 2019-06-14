@@ -66,8 +66,8 @@ ez1=R_inv*ez;
 %% find angular velocity of wing with respect to stationary frame
 %omega_mag is in deg
 %omega is in deg
-[omega, omega_mag,omega_rad]=GetWingAngVel(ex11,ey11,ez11,phi_dotf,zeros(1,length(psi_dotf)),zeros(1,length(beta_dotf)));
-%[omega, omega_mag,omega_rad]=GetWingAngVel(ex11,ey11,ez11,phi_dotf,psi_dotf,beta_dotf);
+%[omega, omega_mag,omega_rad]=GetWingAngVel(ex11,ey11,ez11,phi_dotf,zeros(1,length(psi_dotf)),zeros(1,length(beta_dotf)));
+[omega, omega_mag,omega_rad]=GetWingAngVel(ex11,ey11,ez11,phi_dotf,psi_dotf,beta_dotf);
 figure
 plot(omega_mag)
 %'note: this gives the absolute value of the magnitude not the sign'
