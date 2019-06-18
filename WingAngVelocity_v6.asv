@@ -99,7 +99,6 @@ element3=FindForceVectors(element2,R_inv2,ey11,ex11,ez11,beta_f,phi_f,psi_f);
 
 %% extra: Find the rotational force in the lift direction,(y-axis)
  force_rot_lift=FindForceRotLift(element3);
- force_AM_lift=FindAMLift(element3);
 %% plots used to analyze the data
 Create_Plots(phi_f,force_y,force_x,time)
 
@@ -116,17 +115,17 @@ toc
 %--------------------------------------------------------------------------
 function force_AM_lift=FindAMLift(element)
 
-force_AM_lift=zeros(1,length(element(1).force_AM_vec(2,:)));
-for j=1:length(element(1).force_AM_vec(2,:))
+force_rot_lift=zeros(1,length(element(1).force_Rot_vec(2,:)));
+for j=1:length(element(1).force_Rot_vec(2,:))
     Rot_wing_dummy=0;
     for i=1:length(element)
-        Rot_wing_dummy=Rot_wing_dummy+element(i).force_AM_vec(2,j);
+        Rot_wing_dummy=Rot_wing_dummy+element(i).force_Rot_vec(2,j);
     end
-    force_AM_lift(j)=Rot_wing_dummy;
+    force_rot_lift(j)=Rot_wing_dummy;
 end
 figure
-plot(force_AM_lift)
-title('Lift added mass force')
+plot(force_rotforce_AM_lift_lift)
+title('Lift rotational force')
 end
 
 function force_rot_lift=FindForceRotLift(element)
@@ -235,8 +234,8 @@ for j=1:length(element)
     %elements must be cropped to match the same size
     for i=1:length(linear_acc_filt1)
         part1=rho*pi*c^2/4*del_r;
-        part2=(dot(element(j).linear_vel(:,i),linear_acc_filt(:,i))*sign(psi_f(i))*sind(psi_f(i)))/element(j).linear_vel_norm(i);
-        part3=(sign(psi_dotf(i))*element(j).linear_vel_norm(i)*psi_dotf(i)*cosd(psi_f(i)));
+        part2=(dot(element(j).linear_vel(:,i),linear_acc_filt(:,i))*sind(psi_f(i)))/element(j).linear_vel_norm(i);
+        part3=(element(j).linear_vel_norm(i)*psi_dotf(i)*cosd(psi_f(i)));
         f_addedMass(i)=part1*(part2+part3);
     end
     disp(['Done calculating added mass force for element' num2str(j)])
@@ -343,6 +342,7 @@ Force_Translational=sqrt(Lift_wing_force.^2+Drag_wing_force.^2);
 plot(Force_Translational)
 title('Translation force as described by Sane and Dickinson 2002')
 end
+
 
 function element=FindLinearVelocity(element, omega)
 %finds the linear velocity of each element throughout a full wing stroke
