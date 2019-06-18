@@ -97,7 +97,6 @@ element3=FindForceVectors(element2,R_inv2,ey11,ex11,ez11,beta_f,phi_f,psi_f);
 
 %% extra: Find the rotational force in the lift direction,(y-axis)
  force_rot_lift=FindForceRotLift(element3);
-% force_lift=FindForceLift(element3);
 %% plots used to analyze the data
 Create_Plots(phi_f,force_y,force_x,time)
 
@@ -126,10 +125,8 @@ figure
 plot(force_rot_lift)
 title('Lift rotational force')
 end
-
 function force_lift=FindForceLift(element)
-%this function is not needed in the code. there is already a function that
-%does the same thing 
+
 force_lift=zeros(1,length(element(1).force_Lift));
 for j=1:length(element(1).force_Lift)
     Rot_wing_dummy=0;
