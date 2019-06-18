@@ -100,6 +100,8 @@ element3=FindForceVectors(element2,R_inv2,ey11,ex11,ez11,beta_f,phi_f,psi_f);
 %% extra: Find the rotational force in the lift direction,(y-axis)
  force_rot_lift=FindForceRotLift(element3);
  force_AM_lift=FindAMLift(element3);
+ %% plot lift forces
+ plot(time(1:end-2),Lift_force(1:end-1)+force_rot_lift(1:end)+force_AM_lift);
 %% plots used to analyze the data
 Create_Plots(phi_f,force_y,force_x,time)
 
