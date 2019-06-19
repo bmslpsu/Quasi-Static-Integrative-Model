@@ -2,8 +2,7 @@
 %to have an idea of how the coordinate system is set up please refer to the
 %lagrangian model
 
-% v5 takes into consideration the signs when calculating the forces for the
-% lift and drag.
+% v6 is for our own kinematic data. take longer to high frame rate
 %% note on the axese
 %z-axis is along the length of the wing
 %x-axis is along the chord of the wing starting at the wing base and
@@ -15,7 +14,7 @@ close all
 tic
 %% loads and assigns data
 digits(4); % sets decimal point accuracy
-load('AnglesInter.mat') %loads previously generated data
+load('Fly_Angles.mat') %loads previously generated data
 %% variables
 test=0; %plots the test graphs in the code. useful for debugging
 n=25; %number of wing elements
@@ -25,12 +24,15 @@ rho=1.255;
 global c
 global C_r
 C_r=1.55;
-c=0.5/1000; %turns chrod length to m
-time=(xx-xx(1))/220;
+c=0.6/1000; %turns chrod length to m
+%time=(xx-xx(1))/220;
+time=time_1/1000;
 wing_length=2/1000; % winglength in meters
 del_r=wing_length/n; % the length of each element along the span
 %% Extracts wings angles from data
-[phi_f, psi_f, beta_f,phi,psi,beta]=ExtractAngles(xx,yy1,yy2,yy3);
+%input as follows : AoA, stroke angle, dev angle
+%output: stroke angle, AoA, dev angle
+[phi_f, psi_f, beta_f,phi,psi,beta]=ExtractAngles(time,100-filtered_AoA*180/pi,filtered_stroke_angle_2*180/pi-60, filtered_dev_angle_2*180/pi-90);
 %% find the angular velocity of the wing for each euler angle
 [phi_dotf,psi_dotf,beta_dotf] =GetEulerAngleVelocity(phi_f, psi_f, beta_f, phi,psi,beta);
 %% Stationary wing reference frame
@@ -66,8 +68,8 @@ ez1=R_inv*ez;
 %% find angular velocity of wing with respect to stationary frame
 %omega_mag is in deg
 %omega is in deg
-%[omega, omega_mag,omega_rad]=GetWingAngVel(ex11,ey11,ez11,phi_dotf,zeros(1,length(psi_dotf)),zeros(1,length(beta_dotf)));
-[omega, omega_mag,omega_rad]=GetWingAngVel(ex11,ey11,ez11,phi_dotf,psi_dotf,beta_dotf);
+[omega, omega_mag,omega_rad]=GetWingAngVel(ex11,ey11,ez11,phi_dotf,zeros(1,length(psi_dotf)),zeros(1,length(beta_dotf)));
+%[omega, omega_mag,omega_rad]=GetWingAngVel(ex11,ey11,ez11,phi_dotf,psi_dotf,beta_dotf);
 figure
 plot(omega_mag)
 %'note: this gives the absolute value of the magnitude not the sign'
@@ -97,14 +99,16 @@ element3=FindForceVectors(element2,R_inv2,ey11,ex11,ez11,beta_f,phi_f,psi_f);
 
 %% extra: Find the rotational force in the lift direction,(y-axis)
  force_rot_lift=FindForceRotLift(element3);
-% force_lift=FindForceLift(element3);
+ force_AM_lift=FindAMLift(element3);
+ %% plot lift forces
+ plot(time(1:end-2),Lift_force(1:end-1)+force_rot_lift(1:end)+force_AM_lift);
 %% plots used to analyze the data
 Create_Plots(phi_f,force_y,force_x,time)
 
 %% find the third moment of inertia
 S_3=Find_Third_Moment(wing_length,c);
 %% save script for the data
-save_name=['WingRemaining_' num2str(wing_length/0.002*100) '_' num2str(c/0.0006*100) '_Percent.mat'];
+save_name=['MyData_WingRemaining_' num2str(wing_length/0.002*100) '_' num2str(c/0.0006*100) '_Percent.mat'];
 save_root='C:\Users\was29\Documents\MATLAB\QS_Data\';
 save([save_root save_name],'element3','force_x','force_y','force_z','c','wing_length','time','S_3')
 %% end of code timer
@@ -112,6 +116,21 @@ toc
 %% Functions---------------------------------------------------------------
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
+function force_AM_lift=FindAMLift(element)
+
+force_AM_lift=zeros(1,length(element(1).force_AM_vec(2,:)));
+for j=1:length(element(1).force_AM_vec(2,:))
+    Rot_wing_dummy=0;
+    for i=1:length(element)
+        Rot_wing_dummy=Rot_wing_dummy+element(i).force_AM_vec(2,j);
+    end
+    force_AM_lift(j)=Rot_wing_dummy;
+end
+figure
+plot(force_AM_lift)
+title('Lift added mass force')
+end
+
 function force_rot_lift=FindForceRotLift(element)
 
 force_rot_lift=zeros(1,length(element(1).force_Rot_vec(2,:)));
@@ -124,22 +143,6 @@ for j=1:length(element(1).force_Rot_vec(2,:))
 end
 figure
 plot(force_rot_lift)
-title('Lift rotational force')
-end
-
-function force_lift=FindForceLift(element)
-%this function is not needed in the code. there is already a function that
-%does the same thing 
-force_lift=zeros(1,length(element(1).force_Lift));
-for j=1:length(element(1).force_Lift)
-    Rot_wing_dummy=0;
-    for i=1:length(element)
-        Rot_wing_dummy=Rot_wing_dummy+element(i).force_force_Lift(j);
-    end
-    force_lift(j)=Rot_wing_dummy;
-end
-figure
-plot(force_lift)
 title('Lift rotational force')
 end
 
@@ -156,7 +159,6 @@ for j=1:length(y_cor)
 end
 
 end
-
 function []=Create_Plots(phi_f,force_y,force_x,time)
 figure
 subplot(3,1,1)
@@ -235,8 +237,8 @@ for j=1:length(element)
     %elements must be cropped to match the same size
     for i=1:length(linear_acc_filt1)
         part1=rho*pi*c^2/4*del_r;
-        part2=(dot(element(j).linear_vel(:,i),linear_acc_filt(:,i))*sind(psi_f(i)))/element(j).linear_vel_norm(i);
-        part3=(element(j).linear_vel_norm(i)*psi_dotf(i)*cosd(psi_f(i)));
+        part2=(dot(element(j).linear_vel(:,i),linear_acc_filt(:,i))*sign(psi_f(i))*sind(psi_f(i)))/element(j).linear_vel_norm(i);
+        part3=(sign(psi_dotf(i))*element(j).linear_vel_norm(i)*psi_dotf(i)*cosd(psi_f(i)));
         f_addedMass(i)=part1*(part2+part3);
     end
     disp(['Done calculating added mass force for element' num2str(j)])
@@ -344,7 +346,6 @@ plot(Force_Translational)
 title('Translation force as described by Sane and Dickinson 2002')
 end
 
-
 function element=FindLinearVelocity(element, omega)
 %finds the linear velocity of each element throughout a full wing stroke
 V_linear=zeros(3,length(omega));
@@ -363,11 +364,11 @@ end
 
 function [phi_f, psi_f, beta_f,phi,psi,beta]=ExtractAngles(xx,yy1,yy2,yy3)
 phi=yy2; %stroke angle
-psi=yy1; %deviation angle
-beta=yy3; %rotation angle
+psi=yy1; %rotation angle
+beta=yy3; %deviation angle
 
 %% filtering the position data due to noise by me
-[b, a] = butter(2, 0.045,'low');
+[b, a] = butter(2, 0.15,'low');
 phi_f=filtfilt(b, a, phi);
 psi_f=filtfilt(b, a, psi);
 beta_f=filtfilt(b, a, beta);
@@ -395,7 +396,7 @@ phi_dot=diff(phi)/(time(2)-time(1));
 psi_dot=diff(psi)/(time(2)-time(1));
 beta_dot=diff(beta)/(time(2)-time(1));
 %% filtering also to be done on the derivative of the angle
-[b, a] = butter(3, 0.02,'low');
+[b, a] = butter(3, 0.18,'low');
 
 phi_dotf=diff(phi_f)/(time(2)-time(1));
 psi_dotf=diff(psi_f)/(time(2)-time(1));
